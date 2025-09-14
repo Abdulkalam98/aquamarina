@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Calculator, MessageCircle, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const products = [
   { id: "20l-jar", name: "20L Jar", price: 80 },
@@ -58,7 +59,7 @@ const OrderForm = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.fullName || !formData.phone || !formData.address || !formData.serviceType || !formData.product) {
       toast({
@@ -68,29 +69,65 @@ const OrderForm = () => {
       });
       return;
     }
-    
-    toast({
-      title: "Order Submitted!",
-      description: "We'll contact you soon to confirm your order.",
-    });
-    
-    // Reset form
-    setFormData({
-      fullName: "",
-      phone: "",
-      email: "",
-      address: "",
-      serviceType: "",
-      product: "",
-      quantity: 1,
-      deliveryDate: "",
-      deliveryTime: "",
-      specialInstructions: ""
-    });
-    setTotalCost(0);
+
+    try {
+      // Save order to Supabase
+      const { error } = await supabase
+        .from('orders')
+        .insert([
+          {
+            full_name: formData.fullName,
+            phone: formData.phone,
+            email: formData.email || null,
+            address: formData.address,
+            service_type: formData.serviceType,
+            product: formData.product,
+            quantity: formData.quantity,
+            total_cost: totalCost,
+            delivery_date: formData.deliveryDate || null,
+            delivery_time: formData.deliveryTime || null,
+            special_instructions: formData.specialInstructions || null
+          }
+        ]);
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: "Failed to submit order. Please try again.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      toast({
+        title: "Order Submitted!",
+        description: "We'll contact you soon to confirm your order.",
+      });
+      
+      // Reset form
+      setFormData({
+        fullName: "",
+        phone: "",
+        email: "",
+        address: "",
+        serviceType: "",
+        product: "",
+        quantity: 1,
+        deliveryDate: "",
+        deliveryTime: "",
+        specialInstructions: ""
+      });
+      setTotalCost(0);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleWhatsAppOrder = () => {
+  const handleWhatsAppOrder = async () => {
     if (!formData.fullName || !formData.phone || !formData.address || !formData.serviceType || !formData.product) {
       toast({
         title: "Missing Information",
@@ -100,8 +137,37 @@ const OrderForm = () => {
       return;
     }
 
-    const selectedProduct = products.find(p => p.id === formData.product);
-    const message = `Hi! I'd like to place an order:
+    try {
+      // Save order to Supabase first
+      const { error } = await supabase
+        .from('orders')
+        .insert([
+          {
+            full_name: formData.fullName,
+            phone: formData.phone,
+            email: formData.email || null,
+            address: formData.address,
+            service_type: formData.serviceType,
+            product: formData.product,
+            quantity: formData.quantity,
+            total_cost: totalCost,
+            delivery_date: formData.deliveryDate || null,
+            delivery_time: formData.deliveryTime || null,
+            special_instructions: formData.specialInstructions || null
+          }
+        ]);
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: "Failed to save order. Please try again.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const selectedProduct = products.find(p => p.id === formData.product);
+      const message = `Hi! I'd like to place an order:
     
 Name: ${formData.fullName}
 Phone: ${formData.phone}
@@ -114,8 +180,35 @@ ${formData.deliveryDate ? `Preferred Date: ${formData.deliveryDate}` : ''}
 ${formData.deliveryTime ? `Preferred Time: ${formData.deliveryTime}` : ''}
 ${formData.specialInstructions ? `Special Instructions: ${formData.specialInstructions}` : ''}`;
 
-    const whatsappUrl = `https://wa.me/919XXXXXXXXX?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
+      const whatsappUrl = `https://wa.me/919XXXXXXXXX?text=${encodeURIComponent(message)}`;
+      window.open(whatsappUrl, '_blank');
+
+      // Reset form after successful WhatsApp order
+      setFormData({
+        fullName: "",
+        phone: "",
+        email: "",
+        address: "",
+        serviceType: "",
+        product: "",
+        quantity: 1,
+        deliveryDate: "",
+        deliveryTime: "",
+        specialInstructions: ""
+      });
+      setTotalCost(0);
+
+      toast({
+        title: "Order Saved!",
+        description: "Order saved and WhatsApp opened. Complete your order on WhatsApp.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (

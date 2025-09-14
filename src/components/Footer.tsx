@@ -32,10 +32,11 @@ const Footer = () => {
           <div>
             <h4 className="text-lg font-semibold mb-4">Quick Links</h4>
             <ul className="space-y-2 text-aqua-light">
-              <li><a href="#home" className="hover:text-white transition-colors">Home</a></li>
+              <li><a href="#about" className="hover:text-white transition-colors">About</a></li>
               <li><a href="#products" className="hover:text-white transition-colors">Products</a></li>
-              <li><a href="#about" className="hover:text-white transition-colors">About Us</a></li>
+              <li><a href="#services" className="hover:text-white transition-colors">Services</a></li>
               <li><a href="#contact" className="hover:text-white transition-colors">Contact</a></li>
+              <li><a href="/auth" className="hover:text-white transition-colors">Admin Login</a></li>
             </ul>
           </div>
           
@@ -43,10 +44,10 @@ const Footer = () => {
           <div>
             <h4 className="text-lg font-semibold mb-4">Services</h4>
             <ul className="space-y-2 text-aqua-light">
-              <li><a href="#" className="hover:text-white transition-colors">Home Delivery</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Office Supply</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Bulk Orders</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Subscriptions</a></li>
+              <li><a href="#services" className="hover:text-white transition-colors">Home Delivery</a></li>
+              <li><a href="#services" className="hover:text-white transition-colors">Office Supply</a></li>
+              <li><a href="#services" className="hover:text-white transition-colors">Bulk Orders</a></li>
+              <li><a href="#services" className="hover:text-white transition-colors">Subscriptions</a></li>
             </ul>
           </div>
         </div>
