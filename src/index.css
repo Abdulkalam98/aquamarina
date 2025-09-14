@@ -123,29 +123,21 @@ All colors MUST be HSL.
   }
 }
 
-/* Mobile-Friendly Desktop Layout */
+/* Responsive Design - Maintain Desktop Aesthetic */
 @layer utilities {
-  /* Ensure responsive design works on mobile while maintaining desktop layout */
+  /* Base responsive setup */
   html {
     min-width: 320px;
   }
   
   body {
     min-width: 320px;
-    overflow-x: auto;
+    overflow-x: hidden;
   }
   
-  /* Mobile-friendly container that scales properly */
-  .container {
-    min-width: 320px !important;
-  }
-  
-  /* Scale down on smaller screens but keep desktop proportions */
-  @media (max-width: 768px) {
-    html {
-      font-size: 14px;
-    }
-    
+  /* Mobile responsiveness while keeping desktop design */
+  @media (max-width: 640px) {
+    /* Scale text appropriately for mobile */
     .text-9xl {
       font-size: 4rem !important;
       line-height: 1 !important;
@@ -153,53 +145,156 @@ All colors MUST be HSL.
     
     .text-7xl {
       font-size: 3rem !important;
-      line-height: 1 !important;
+      line-height: 1.1 !important;
     }
     
     .text-5xl {
-      font-size: 2.5rem !important;
+      font-size: 2.25rem !important;
       line-height: 1.2 !important;
     }
     
     .text-3xl {
+      font-size: 1.75rem !important;
+      line-height: 1.3 !important;
+    }
+    
+    .text-2xl {
       font-size: 1.5rem !important;
       line-height: 1.4 !important;
     }
     
-    /* Ensure buttons are touchable on mobile */
-    .btn, button {
-      min-height: 44px !important;
-      min-width: 44px !important;
+    .text-xl {
+      font-size: 1.25rem !important;
+      line-height: 1.5 !important;
     }
     
-    /* Make cards responsive on mobile */
+    /* Mobile grid layouts - stack vertically but keep spacing */
     .grid-cols-3 {
       grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
-      gap: 1rem !important;
+      gap: 2rem !important;
     }
     
     .grid-cols-2 {
       grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
-      gap: 1rem !important;
+      gap: 1.5rem !important;
     }
     
-    /* Better spacing on mobile */
+    /* Button layouts - stack on mobile but keep design */
+    .flex.flex-row {
+      flex-direction: column !important;
+      gap: 1rem !important;
+      align-items: stretch !important;
+    }
+    
+    /* Maintain button sizes and styling */
+    button, .btn {
+      min-height: 3.5rem !important;
+      padding: 1rem 2rem !important;
+      font-size: 1.125rem !important;
+      width: 100% !important;
+    }
+    
+    /* Responsive padding and margins */
     .px-6 {
-      padding-left: 1rem !important;
-      padding-right: 1rem !important;
+      padding-left: 1.5rem !important;
+      padding-right: 1.5rem !important;
+    }
+    
+    .px-12 {
+      padding-left: 2rem !important;
+      padding-right: 2rem !important;
+    }
+    
+    .py-8 {
+      padding-top: 1.5rem !important;
+      padding-bottom: 1.5rem !important;
     }
     
     .gap-6 {
-      gap: 1rem !important;
+      gap: 1.5rem !important;
     }
     
     .gap-8 {
-      gap: 1.5rem !important;
+      gap: 2rem !important;
+    }
+    
+    .mb-8 {
+      margin-bottom: 2rem !important;
+    }
+    
+    .mb-12 {
+      margin-bottom: 3rem !important;
+    }
+    
+    /* Hero section mobile adjustments */
+    .max-w-6xl {
+      max-width: 100% !important;
+      padding: 0 1rem !important;
+    }
+    
+    .max-w-4xl {
+      max-width: 100% !important;
+    }
+    
+    .max-w-3xl {
+      max-width: 100% !important;
+    }
+    
+    /* Navigation adjustments */
+    .fixed.top-4.right-4 {
+      top: 1rem !important;
+      right: 1rem !important;
+      flex-direction: column !important;
+      gap: 0.5rem !important;
+    }
+    
+    .fixed.top-4.right-4 button {
+      padding: 0.75rem 1rem !important;
+      font-size: 0.875rem !important;
+      min-width: auto !important;
+      width: auto !important;
+    }
+    
+    /* Card responsive adjustments */
+    .p-6 {
+      padding: 1.5rem !important;
+    }
+    
+    .p-8 {
+      padding: 2rem !important;
+    }
+    
+    /* Maintain visual effects on mobile */
+    .shadow-2xl {
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+    }
+    
+    .backdrop-blur-sm {
+      backdrop-filter: blur(4px) !important;
     }
   }
   
-  /* Keep desktop styles for larger screens */
-  @media (min-width: 769px) {
+  /* Tablet adjustments */
+  @media (min-width: 641px) and (max-width: 1024px) {
+    .text-9xl {
+      font-size: 6rem !important;
+    }
+    
+    .text-7xl {
+      font-size: 4rem !important;
+    }
+    
+    .text-5xl {
+      font-size: 3rem !important;
+    }
+    
+    .grid-cols-3 {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+  }
+  
+  /* Desktop - keep original sizing */
+  @media (min-width: 1025px) {
     /* Override responsive text sizes to always use large desktop sizes */
     .text-6xl.lg\\:text-9xl {
       font-size: 8rem !important;

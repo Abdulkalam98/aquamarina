@@ -46,7 +46,7 @@ const Hero = () => {
           We bring you premium quality mineral water – tested, certified, and trusted by families and businesses.
         </p>
         
-        <div className="flex flex-row gap-6 justify-center items-center animate-slide-up delay-700">
+        <div className="flex flex-col sm:flex-row gap-6 justify-center items-center animate-slide-up delay-700">
           <Button 
             variant="hero" 
             size="lg" 
