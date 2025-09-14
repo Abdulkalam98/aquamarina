@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Droplets, Mail, Lock, UserIcon, ArrowLeft } from "lucide-react";
+import { Droplets, Phone, Lock, UserIcon, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, Link } from "react-router-dom";
@@ -13,6 +13,8 @@ import type { User } from "@supabase/supabase-js";
 const Auth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState('');
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -38,60 +40,60 @@ const Auth = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSendOTP = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     
     const formData = new FormData(e.currentTarget);
-    const email = formData.get('signup-email') as string;
-    const password = formData.get('signup-password') as string;
+    const phone = formData.get('phone') as string;
+    setPhoneNumber(phone);
     
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
+    const { error } = await supabase.auth.signInWithOtp({
+      phone,
       options: {
-        emailRedirectTo: `${window.location.origin}/`
+        shouldCreateUser: true
       }
     });
 
     if (error) {
       toast({
-        title: "Sign Up Error",
+        title: "Error",
         description: error.message,
         variant: "destructive"
       });
     } else {
+      setOtpSent(true);
       toast({
-        title: "Check your email",
-        description: "We sent you a confirmation link to complete your account setup.",
+        title: "OTP Sent",
+        description: "Check your SMS for the verification code.",
       });
     }
     
     setLoading(false);
   };
 
-  const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleVerifyOTP = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     
     const formData = new FormData(e.currentTarget);
-    const email = formData.get('signin-email') as string;
-    const password = formData.get('signin-password') as string;
+    const otp = formData.get('otp') as string;
     
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password
+    const { error } = await supabase.auth.verifyOtp({
+      phone: phoneNumber,
+      token: otp,
+      type: 'sms'
     });
 
     if (error) {
       toast({
-        title: "Sign In Error",
+        title: "Verification Error",
         description: error.message,
         variant: "destructive"
       });
     } else {
       toast({
-        title: "Welcome back!",
+        title: "Welcome!",
         description: "You have successfully signed in.",
       });
     }
@@ -116,96 +118,78 @@ const Auth = () => {
 
         <Card className="shadow-water">
           <CardContent className="p-6">
-            <Tabs defaultValue="signin" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="signin">Sign In</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="signin" className="space-y-4">
+            {!otpSent ? (
+              <div className="space-y-6">
                 <CardHeader className="p-0">
-                  <CardTitle className="text-xl text-center text-ocean-deep">Welcome Back</CardTitle>
+                  <CardTitle className="text-xl text-center text-ocean-deep">Enter Your Phone</CardTitle>
+                  <p className="text-center text-muted-foreground text-sm">We'll send you a verification code</p>
                 </CardHeader>
-                <form onSubmit={handleSignIn} className="space-y-4">
+                <form onSubmit={handleSendOTP} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="signin-email" className="text-ocean-deep">Email</Label>
+                    <Label htmlFor="phone" className="text-ocean-deep">Phone Number</Label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
-                        id="signin-email"
-                        name="signin-email"
-                        type="email"
-                        placeholder="Enter your email"
+                        id="phone"
+                        name="phone"
+                        type="tel"
+                        placeholder="+1234567890"
                         className="pl-10"
                         required
                       />
                     </div>
+                    <p className="text-xs text-muted-foreground">Include country code (e.g., +1 for US)</p>
                   </div>
+                  <Button type="submit" variant="water" className="w-full" disabled={loading}>
+                    {loading ? "Sending..." : "Send Verification Code"}
+                  </Button>
+                </form>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <CardHeader className="p-0">
+                  <CardTitle className="text-xl text-center text-ocean-deep">Enter Verification Code</CardTitle>
+                  <p className="text-center text-muted-foreground text-sm">Enter the 6-digit code sent to {phoneNumber}</p>
+                </CardHeader>
+                <form onSubmit={handleVerifyOTP} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="signin-password" className="text-ocean-deep">Password</Label>
+                    <Label htmlFor="otp" className="text-ocean-deep">Verification Code</Label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
-                        id="signin-password"
-                        name="signin-password"
-                        type="password"
-                        placeholder="Enter your password"
-                        className="pl-10"
+                        id="otp"
+                        name="otp"
+                        type="text"
+                        placeholder="123456"
+                        className="pl-10 text-center text-lg tracking-widest"
                         required
+                        maxLength={6}
+                        pattern="[0-9]{6}"
                       />
                     </div>
                   </div>
                   <Button type="submit" variant="water" className="w-full" disabled={loading}>
-                    {loading ? "Signing In..." : "Sign In"}
+                    {loading ? "Verifying..." : "Verify Code"}
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    className="w-full" 
+                    onClick={() => {
+                      setOtpSent(false);
+                      setPhoneNumber('');
+                    }}
+                  >
+                    Back to Phone Number
                   </Button>
                 </form>
-              </TabsContent>
-
-              <TabsContent value="signup" className="space-y-4">
-                <CardHeader className="p-0">
-                  <CardTitle className="text-xl text-center text-ocean-deep">Create Account</CardTitle>
-                </CardHeader>
-                <form onSubmit={handleSignUp} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-email" className="text-ocean-deep">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="signup-email"
-                        name="signup-email"
-                        type="email"
-                        placeholder="Enter your email"
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password" className="text-ocean-deep">Password</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="signup-password"
-                        name="signup-password"
-                        type="password"
-                        placeholder="Create a password (min 6 characters)"
-                        className="pl-10"
-                        required
-                        minLength={6}
-                      />
-                    </div>
-                  </div>
-                  <Button type="submit" variant="water" className="w-full" disabled={loading}>
-                    {loading ? "Creating Account..." : "Create Account"}
-                  </Button>
-                </form>
-              </TabsContent>
-            </Tabs>
+              </div>
+            )}
           </CardContent>
         </Card>
 
         <div className="text-center mt-6 text-sm text-muted-foreground">
-          <p>Use admin@aquamarina.com to access admin features</p>
+          <p>Use phone number with admin access to view orders</p>
         </div>
       </div>
     </div>
