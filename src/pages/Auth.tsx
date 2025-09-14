@@ -133,32 +133,32 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-aqua-light/10 via-background to-wave-blue/5 flex items-center justify-center p-4">
-      <div className="flex flex-col items-center w-full max-w-md space-y-6">
+      <div className="flex flex-col items-center w-full max-w-sm sm:max-w-md space-y-4 sm:space-y-6">
         {/* Logo */}
-        <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-gradient-to-br from-aqua-primary to-wave-blue rounded-full flex items-center justify-center shadow-lg">
-            <Droplet className="w-8 h-8 text-white" />
+        <div className="flex items-center space-x-2 sm:space-x-3">
+          <div className="w-8 h-8 sm:w-12 sm:h-12 bg-gradient-to-br from-aqua-primary to-wave-blue rounded-full flex items-center justify-center shadow-lg">
+            <Droplet className="w-5 h-5 sm:w-8 sm:h-8 text-white" />
           </div>
-          <span className="text-3xl font-bold bg-gradient-to-r from-ocean-deep to-aqua-primary bg-clip-text text-transparent">
+          <span className="text-xl sm:text-3xl font-bold bg-gradient-to-r from-ocean-deep to-aqua-primary bg-clip-text text-transparent">
             Aqua Marina
           </span>
         </div>
 
         <Card className="w-full border-aqua-light/30 shadow-water">
-          <CardHeader>
-            <CardTitle className="text-center text-ocean-deep">Welcome</CardTitle>
+          <CardHeader className="pb-4 sm:pb-6">
+            <CardTitle className="text-lg sm:text-xl text-center text-ocean-deep">Welcome</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 sm:p-6">
             <Tabs defaultValue="signin" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="signin">Sign In</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 h-8 sm:h-10">
+                <TabsTrigger value="signin" className="text-sm sm:text-base">Sign In</TabsTrigger>
+                <TabsTrigger value="signup" className="text-sm sm:text-base">Sign Up</TabsTrigger>
               </TabsList>
               
-              <TabsContent value="signin" className="space-y-4">
-                <form onSubmit={handleSignIn} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signin-email">Email</Label>
+              <TabsContent value="signin" className="space-y-3 sm:space-y-4 mt-4">
+                <form onSubmit={handleSignIn} className="space-y-3 sm:space-y-4">
+                  <div className="space-y-1 sm:space-y-2">
+                    <Label htmlFor="signin-email" className="text-sm">Email</Label>
                     <Input
                       id="signin-email"
                       type="email"
@@ -166,11 +166,12 @@ const Auth = () => {
                       onChange={(e) => setEmail(e.target.value)}
                       required
                       placeholder="Enter your email"
+                      className="h-9 sm:h-10"
                     />
                   </div>
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="signin-password">Password</Label>
+                  <div className="space-y-1 sm:space-y-2">
+                    <Label htmlFor="signin-password" className="text-sm">Password</Label>
                     <div className="relative">
                       <Input
                         id="signin-password"
@@ -178,34 +179,35 @@ const Auth = () => {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
+                        className="h-9 sm:h-10"
                         placeholder="Enter your password"
                       />
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        className="absolute right-0 top-0 h-full px-2 sm:px-3 py-2 hover:bg-transparent"
                         onClick={() => setShowPassword(!showPassword)}
                       >
                         {showPassword ? (
-                          <EyeOff className="h-4 w-4" />
+                          <EyeOff className="h-3 w-3 sm:h-4 sm:w-4" />
                         ) : (
-                          <Eye className="h-4 w-4" />
+                          <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
                         )}
                       </Button>
                     </div>
                   </div>
                   
-                  <Button type="submit" className="w-full" disabled={loading}>
+                  <Button type="submit" className="w-full h-9 sm:h-10 text-sm sm:text-base" disabled={loading}>
                     {loading ? "Signing in..." : "Sign In"}
                   </Button>
                 </form>
               </TabsContent>
               
-              <TabsContent value="signup" className="space-y-4">
-                <form onSubmit={handleSignUp} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-name">Full Name</Label>
+              <TabsContent value="signup" className="space-y-3 sm:space-y-4 mt-4">
+                <form onSubmit={handleSignUp} className="space-y-3 sm:space-y-4">
+                  <div className="space-y-1 sm:space-y-2">
+                    <Label htmlFor="signup-name" className="text-sm">Full Name</Label>
                     <Input
                       id="signup-name"
                       type="text"
@@ -213,11 +215,12 @@ const Auth = () => {
                       onChange={(e) => setFullName(e.target.value)}
                       required
                       placeholder="Enter your full name"
+                      className="h-9 sm:h-10"
                     />
                   </div>
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-email">Email</Label>
+                  <div className="space-y-1 sm:space-y-2">
+                    <Label htmlFor="signup-email" className="text-sm">Email</Label>
                     <Input
                       id="signup-email"
                       type="email"
@@ -225,23 +228,38 @@ const Auth = () => {
                       onChange={(e) => setEmail(e.target.value)}
                       required
                       placeholder="Enter your email"
+                      className="h-9 sm:h-10"
                     />
                   </div>
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-phone">Phone Number</Label>
+                  <div className="space-y-1 sm:space-y-2">
+                    <Label htmlFor="signup-phone" className="text-sm">Phone Number</Label>
                     <Input
                       id="signup-phone"
                       type="tel"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       required
+                      className="h-9 sm:h-10"
                       placeholder="Enter your phone number"
                     />
                   </div>
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password">Password</Label>
+                  <div className="space-y-1 sm:space-y-2">
+                    <Label htmlFor="signup-address" className="text-sm">Address</Label>
+                    <Input
+                      id="signup-address"
+                      type="text"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      required
+                      placeholder="Enter your address"
+                      className="h-9 sm:h-10"
+                    />
+                  </div>
+                  
+                  <div className="space-y-1 sm:space-y-2">
+                    <Label htmlFor="signup-password" className="text-sm">Password</Label>
                     <div className="relative">
                       <Input
                         id="signup-password"
@@ -250,24 +268,29 @@ const Auth = () => {
                         onChange={(e) => setPassword(e.target.value)}
                         required
                         placeholder="Create a password"
+                        className="h-9 sm:h-10"
                       />
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        className="absolute right-0 top-0 h-full px-2 sm:px-3 py-2 hover:bg-transparent"
                         onClick={() => setShowPassword(!showPassword)}
                       >
                         {showPassword ? (
-                          <EyeOff className="h-4 w-4" />
+                          <EyeOff className="h-3 w-3 sm:h-4 sm:w-4" />
                         ) : (
-                          <Eye className="h-4 w-4" />
+                          <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
                         )}
                       </Button>
                     </div>
                   </div>
                   
-                  <Button type="submit" className="w-full" disabled={loading}>
+                  <Button 
+                    type="submit" 
+                    className="w-full h-9 sm:h-10 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700" 
+                    disabled={loading}
+                  >
                     {loading ? "Creating account..." : "Sign Up"}
                   </Button>
                 </form>
