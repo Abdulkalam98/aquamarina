@@ -31,6 +31,7 @@ export type Database = {
           status: string
           total_cost: number
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           address: string
@@ -48,6 +49,7 @@ export type Database = {
           status?: string
           total_cost: number
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           address?: string
@@ -64,6 +66,43 @@ export type Database = {
           special_instructions?: string | null
           status?: string
           total_cost?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          price: number
+          size: string
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          price: number
+          size: string
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          price?: number
+          size?: string
+          unit?: string
           updated_at?: string
         }
         Relationships: []
@@ -103,7 +142,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_current_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

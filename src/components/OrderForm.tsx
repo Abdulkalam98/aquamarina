@@ -1,15 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Truck } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { Calendar, MapPin, Package, User, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 import ProductSelector from "./ProductSelector";
-import Cart, { CartItem } from "./Cart";
+import Cart, { type CartItem } from "./Cart";
 
 const serviceTypes = [
   "One-time Delivery",
@@ -18,6 +20,8 @@ const serviceTypes = [
 ];
 
 const OrderForm = () => {
+  const { user, signOut, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [formData, setFormData] = useState({
     fullName: "",
@@ -27,10 +31,37 @@ const OrderForm = () => {
     serviceType: "",
     deliveryDate: "",
     deliveryTime: "",
-    specialInstructions: ""
+    specialInstructions: "",
   });
-
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/auth');
+    }
+  }, [user, authLoading, navigate]);
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      navigate('/');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-aqua-primary"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null; // Will redirect via useEffect
+  }
   const totalCost = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
   const handleAddToCart = (item: CartItem) => {
@@ -86,69 +117,87 @@ const OrderForm = () => {
     
     if (cartItems.length === 0) {
       toast({
-        title: "Cart is empty",
-        description: "Please add some products to your cart before placing an order.",
+        description: "Please add items to your cart before placing an order",
         variant: "destructive"
       });
       return;
     }
 
-    if (!formData.fullName || !formData.phone || !formData.address || !formData.serviceType) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields.",
-        variant: "destructive"
-      });
-      return;
-    }
+    setLoading(true);
 
     try {
-      const orders = [];
+      // Calculate total cost
+      const totalCost = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      
+      // Create order for each cart item
       for (const item of cartItems) {
-        const { data, error } = await supabase
+        const { error: orderError } = await supabase
           .from('orders')
-          .insert({
-            full_name: formData.fullName,
-            phone: formData.phone,
-            email: formData.email || null,
-            address: formData.address,
-            service_type: formData.serviceType,
-            product: `${item.name} - ${item.size}`,
-            quantity: item.quantity,
-            total_cost: item.price * item.quantity,
-            delivery_date: formData.deliveryDate || null,
-            delivery_time: formData.deliveryTime || null,
-            special_instructions: formData.specialInstructions || null,
-            status: 'pending'
-          })
-          .select()
-          .single();
+          .insert([
+            {
+              user_id: user.id, // Add user_id for RLS
+              full_name: formData.fullName,
+              phone: formData.phone,
+              email: formData.email,
+              address: formData.address,
+              service_type: formData.serviceType,
+              product: `${item.name} - ${item.size}`,
+              quantity: item.quantity,
+              total_cost: item.price * item.quantity,
+              delivery_date: formData.deliveryDate || null,
+              delivery_time: formData.deliveryTime || null,
+              special_instructions: formData.specialInstructions || null,
+              status: 'pending'
+            }
+          ]);
 
-        if (error) throw error;
-        orders.push(data);
+        if (orderError) {
+          console.error('Error creating order:', orderError);
+          throw orderError;
+        }
       }
 
-      if (orders.length > 0) {
-        await sendAdminNotification(orders[0].id);
+      // Send admin notification
+      try {
+        await supabase.functions.invoke('send-admin-notification', {
+          body: {
+            customerName: formData.fullName,
+            customerPhone: formData.phone,
+            customerEmail: formData.email,
+            items: cartItems,
+            totalCost: totalCost
+          }
+        });
+      } catch (notificationError) {
+        console.error('Error sending admin notification:', notificationError);
+        // Don't fail the order if notification fails
       }
 
       toast({
-        title: "Order Placed Successfully!",
-        description: `Your order for ₹${totalCost} has been received. You will be contacted soon for delivery confirmation.`,
+        description: "Order placed successfully! We'll contact you soon.",
       });
 
+      // Reset form and cart
       setFormData({
-        fullName: "", phone: "", email: "", address: "", serviceType: "",
-        deliveryDate: "", deliveryTime: "", specialInstructions: ""
+        fullName: "",
+        phone: "",
+        email: "",
+        address: "",
+        serviceType: "",
+        deliveryDate: "",
+        deliveryTime: "",
+        specialInstructions: "",
       });
       setCartItems([]);
 
     } catch (error: any) {
+      console.error('Order submission error:', error);
       toast({
-        title: "Order Failed",
-        description: error.message || "Something went wrong. Please try again.",
+        description: error.message || "Failed to place order. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -216,13 +265,26 @@ const OrderForm = () => {
   };
 
   return (
-    <section className="py-20 bg-gradient-to-b from-aqua-light/10 to-background">
+    <section className="py-20 bg-gradient-to-b from-background to-aqua-light/5">
       <div className="container mx-auto px-6">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl lg:text-5xl font-bold text-ocean-deep mb-4">Place Your Order</h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Select your products and provide delivery details for fresh water delivery
-          </p>
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h2 className="text-4xl lg:text-5xl font-bold text-ocean-deep mb-4">
+              Place Your Order
+            </h2>
+            <p className="text-xl text-muted-foreground">
+              Select your premium water cases and provide delivery details.
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-muted-foreground">
+              Welcome, {user.email}
+            </span>
+            <Button variant="outline" size="sm" onClick={handleSignOut}>
+              <LogOut className="w-4 h-4 mr-2" />
+              Sign Out
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -238,63 +300,115 @@ const OrderForm = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="fullName">Full Name *</Label>
-                      <Input id="fullName" value={formData.fullName} onChange={(e) => setFormData({...formData, fullName: e.target.value})} placeholder="Enter your full name" required />
+                      <Input 
+                        id="fullName" 
+                        value={formData.fullName} 
+                        onChange={(e) => setFormData({...formData, fullName: e.target.value})} 
+                        placeholder="Enter your full name" 
+                        required 
+                      />
                     </div>
                     <div>
                       <Label htmlFor="phone">Phone Number *</Label>
-                      <Input id="phone" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} placeholder="Enter your phone number" required />
+                      <Input 
+                        id="phone" 
+                        value={formData.phone} 
+                        onChange={(e) => setFormData({...formData, phone: e.target.value})} 
+                        placeholder="Enter your phone number" 
+                        required 
+                      />
                     </div>
                   </div>
 
                   <div>
-                    <Label htmlFor="email">Email Address (Optional)</Label>
-                    <Input id="email" type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} placeholder="Enter your email address" />
+                    <Label htmlFor="email">Email Address</Label>
+                    <Input 
+                      id="email" 
+                      type="email" 
+                      value={formData.email} 
+                      onChange={(e) => setFormData({...formData, email: e.target.value})} 
+                      placeholder="Enter your email address" 
+                    />
                   </div>
 
                   <div>
                     <Label htmlFor="serviceType">Service Type *</Label>
                     <Select value={formData.serviceType} onValueChange={(value) => setFormData({...formData, serviceType: value})}>
                       <SelectTrigger><SelectValue placeholder="Choose service type" /></SelectTrigger>
-                      <SelectContent>{serviceTypes.map((type) => (<SelectItem key={type} value={type}>{type}</SelectItem>))}</SelectContent>
+                      <SelectContent>
+                        <SelectItem value="One-time Delivery">One-time Delivery</SelectItem>
+                        <SelectItem value="Weekly Subscription">Weekly Subscription</SelectItem>
+                        <SelectItem value="Monthly Subscription">Monthly Subscription</SelectItem>
+                      </SelectContent>
                     </Select>
                   </div>
 
                   <div>
                     <Label htmlFor="address">Delivery Address *</Label>
-                    <Textarea id="address" value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} placeholder="Enter complete delivery address" required className="min-h-24" />
+                    <Textarea 
+                      id="address" 
+                      value={formData.address} 
+                      onChange={(e) => setFormData({...formData, address: e.target.value})} 
+                      placeholder="Enter complete delivery address" 
+                      required 
+                      className="min-h-24" 
+                    />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="deliveryDate">Preferred Delivery Date</Label>
-                      <Input id="deliveryDate" type="date" value={formData.deliveryDate} onChange={(e) => setFormData({...formData, deliveryDate: e.target.value})} />
+                      <Input 
+                        id="deliveryDate" 
+                        type="date" 
+                        value={formData.deliveryDate} 
+                        onChange={(e) => setFormData({...formData, deliveryDate: e.target.value})} 
+                      />
                     </div>
                     <div>
                       <Label htmlFor="deliveryTime">Preferred Delivery Time</Label>
-                      <Input id="deliveryTime" value={formData.deliveryTime} onChange={(e) => setFormData({...formData, deliveryTime: e.target.value})} placeholder="e.g., 10 AM - 2 PM" />
+                      <Input 
+                        id="deliveryTime" 
+                        value={formData.deliveryTime} 
+                        onChange={(e) => setFormData({...formData, deliveryTime: e.target.value})} 
+                        placeholder="e.g., 10 AM - 2 PM" 
+                      />
                     </div>
                   </div>
 
                   <div>
                     <Label htmlFor="specialInstructions">Special Instructions</Label>
-                    <Textarea id="specialInstructions" value={formData.specialInstructions} onChange={(e) => setFormData({...formData, specialInstructions: e.target.value})} placeholder="Any special delivery instructions..." className="min-h-20" />
+                    <Textarea 
+                      id="specialInstructions" 
+                      value={formData.specialInstructions} 
+                      onChange={(e) => setFormData({...formData, specialInstructions: e.target.value})} 
+                      placeholder="Any special delivery instructions..." 
+                      className="min-h-20" 
+                    />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Button type="submit" variant="water" size="lg" className="w-full text-lg">
-                      <Truck className="w-5 h-5 mr-2" />Submit Order
-                    </Button>
-                    <Button type="button" onClick={handleWhatsAppOrder} variant="outline" size="lg" className="w-full text-lg border-green-500 text-green-700 hover:bg-green-50">
-                      💬 Order via WhatsApp
-                    </Button>
-                  </div>
+                  <Button 
+                    type="submit" 
+                    variant="default" 
+                    size="lg" 
+                    className="w-full text-lg" 
+                    disabled={loading}
+                  >
+                    <Package className="w-5 h-5 mr-2" />
+                    {loading ? "Placing Order..." : "Place Order"}
+                  </Button>
                 </form>
               </CardContent>
             </Card>
           </div>
 
           <div className="lg:col-span-1">
-            <Cart items={cartItems} onUpdateQuantity={handleUpdateQuantity} onRemoveItem={handleRemoveItem} onClearCart={handleClearCart} />
+            <Cart 
+              items={cartItems} 
+              onUpdateQuantity={handleUpdateQuantity} 
+              onRemoveItem={handleRemoveItem} 
+              onClearCart={handleClearCart} 
+            />
           </div>
         </div>
       </div>

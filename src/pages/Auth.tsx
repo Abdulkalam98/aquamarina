@@ -4,209 +4,273 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Droplets, Mail, Lock, UserIcon, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate, Link } from "react-router-dom";
-import type { User } from "@supabase/supabase-js";
+import { useNavigate } from "react-router-dom";
+import { Droplet, Eye, EyeOff } from "lucide-react";
+import type { User, Session } from '@supabase/supabase-js';
 
 const Auth = () => {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState("");
+  const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        navigate('/admin');
-      }
-    });
-
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        setSession(session);
         setUser(session?.user ?? null);
+        
         if (session?.user) {
-          navigate('/admin');
+          navigate("/");
         }
       }
     );
 
-    return () => subscription.unsubscribe();
-  }, [navigate]);
-
-  const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setLoading(true);
-    
-    const formData = new FormData(e.currentTarget);
-    const email = formData.get('signup-email') as string;
-    const password = formData.get('signup-password') as string;
-    
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/`
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        navigate("/");
       }
     });
 
-    if (error) {
-      toast({
-        title: "Sign Up Error",
-        description: error.message,
-        variant: "destructive"
-      });
-    } else {
-      toast({
-        title: "Check your email",
-        description: "We sent you a confirmation link to complete your account setup.",
-      });
-    }
-    
-    setLoading(false);
-  };
+    return () => subscription.unsubscribe();
+  }, [navigate]);
 
-  const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
-    const formData = new FormData(e.currentTarget);
-    const email = formData.get('signin-email') as string;
-    const password = formData.get('signin-password') as string;
-    
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
 
-    if (error) {
+    try {
+      const redirectUrl = `${window.location.origin}/`;
+      
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            full_name: fullName,
+            phone: phone
+          }
+        }
+      });
+
+      if (error) {
+        if (error.message.includes("already registered")) {
+          toast({
+            description: "This email is already registered. Please sign in instead.",
+            variant: "destructive"
+          });
+        } else {
+          toast({
+            description: error.message,
+            variant: "destructive"
+          });
+        }
+      } else {
+        toast({
+          description: "Please check your email to confirm your account.",
+        });
+      }
+    } catch (error: any) {
       toast({
-        title: "Sign In Error",
-        description: error.message,
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive"
       });
-    } else {
-      toast({
-        title: "Welcome back!",
-        description: "You have successfully signed in.",
-      });
+    } finally {
+      setLoading(false);
     }
-    
-    setLoading(false);
   };
 
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        if (error.message.includes("Invalid login credentials")) {
+          toast({
+            description: "Invalid email or password. Please try again.",
+            variant: "destructive"
+          });
+        } else {
+          toast({
+            description: error.message,
+            variant: "destructive"
+          });
+        }
+      }
+    } catch (error: any) {
+      toast({
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (user) {
+    return null; // Will redirect via useEffect
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-aqua-light/10 flex items-center justify-center p-6">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-2 text-ocean-deep hover:text-aqua-primary mb-4">
-            <ArrowLeft className="w-4 h-4" />
-            Back to Home
-          </Link>
-          <div className="flex justify-center items-center gap-3 mb-4">
-            <Droplets className="w-8 h-8 text-aqua-primary" />
-            <h1 className="text-3xl font-bold text-ocean-deep">Aqua Marina</h1>
+    <div className="min-h-screen bg-gradient-to-br from-aqua-light/10 via-background to-wave-blue/5 flex items-center justify-center p-4">
+      <div className="flex flex-col items-center w-full max-w-md space-y-6">
+        {/* Logo */}
+        <div className="flex items-center space-x-2">
+          <div className="w-10 h-10 bg-gradient-to-br from-aqua-primary to-wave-blue rounded-full flex items-center justify-center">
+            <Droplet className="w-6 h-6 text-white" />
           </div>
-          <p className="text-muted-foreground">Access your account</p>
+          <span className="text-2xl font-bold text-ocean-deep">AquaPure</span>
         </div>
 
-        <Card className="shadow-water">
-          <CardContent className="p-6">
-            <Tabs defaultValue="signin" className="space-y-6">
+        <Card className="w-full border-aqua-light/30 shadow-water">
+          <CardHeader>
+            <CardTitle className="text-center text-ocean-deep">Welcome</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="signin" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="signin">Sign In</TabsTrigger>
                 <TabsTrigger value="signup">Sign Up</TabsTrigger>
               </TabsList>
-
+              
               <TabsContent value="signin" className="space-y-4">
-                <CardHeader className="p-0">
-                  <CardTitle className="text-xl text-center text-ocean-deep">Welcome Back</CardTitle>
-                </CardHeader>
                 <form onSubmit={handleSignIn} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="signin-email" className="text-ocean-deep">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="signin-email"
-                        name="signin-email"
-                        type="email"
-                        placeholder="Enter your email"
-                        className="pl-10"
-                        required
-                      />
-                    </div>
+                    <Label htmlFor="signin-email">Email</Label>
+                    <Input
+                      id="signin-email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      placeholder="Enter your email"
+                    />
                   </div>
+                  
                   <div className="space-y-2">
-                    <Label htmlFor="signin-password" className="text-ocean-deep">Password</Label>
+                    <Label htmlFor="signin-password">Password</Label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="signin-password"
-                        name="signin-password"
-                        type="password"
-                        placeholder="Enter your password"
-                        className="pl-10"
+                        type={showPassword ? "text" : "password"}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
                         required
+                        placeholder="Enter your password"
                       />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </Button>
                     </div>
                   </div>
-                  <Button type="submit" variant="water" className="w-full" disabled={loading}>
-                    {loading ? "Signing In..." : "Sign In"}
+                  
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? "Signing in..." : "Sign In"}
                   </Button>
                 </form>
               </TabsContent>
-
+              
               <TabsContent value="signup" className="space-y-4">
-                <CardHeader className="p-0">
-                  <CardTitle className="text-xl text-center text-ocean-deep">Create Account</CardTitle>
-                </CardHeader>
                 <form onSubmit={handleSignUp} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="signup-email" className="text-ocean-deep">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="signup-email"
-                        name="signup-email"
-                        type="email"
-                        placeholder="Enter your email"
-                        className="pl-10"
-                        required
-                      />
-                    </div>
+                    <Label htmlFor="signup-name">Full Name</Label>
+                    <Input
+                      id="signup-name"
+                      type="text"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      required
+                      placeholder="Enter your full name"
+                    />
                   </div>
+                  
                   <div className="space-y-2">
-                    <Label htmlFor="signup-password" className="text-ocean-deep">Password</Label>
+                    <Label htmlFor="signup-email">Email</Label>
+                    <Input
+                      id="signup-email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      placeholder="Enter your email"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-phone">Phone Number</Label>
+                    <Input
+                      id="signup-phone"
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      required
+                      placeholder="Enter your phone number"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-password">Password</Label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="signup-password"
-                        name="signup-password"
-                        type="password"
-                        placeholder="Create a password (min 6 characters)"
-                        className="pl-10"
+                        type={showPassword ? "text" : "password"}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
                         required
-                        minLength={6}
+                        placeholder="Create a password"
                       />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </Button>
                     </div>
                   </div>
-                  <Button type="submit" variant="water" className="w-full" disabled={loading}>
-                    {loading ? "Creating Account..." : "Create Account"}
+                  
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? "Creating account..." : "Sign Up"}
                   </Button>
                 </form>
               </TabsContent>
             </Tabs>
           </CardContent>
         </Card>
-
-        <div className="text-center mt-6 text-sm text-muted-foreground">
-          <p>Use admin@aquamarina.com to access admin features</p>
-        </div>
       </div>
     </div>
   );
