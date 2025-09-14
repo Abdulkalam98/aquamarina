@@ -24,7 +24,7 @@ const Hero = () => {
         </div>
         
         <h2 className="text-2xl lg:text-4xl font-light mb-6 max-w-4xl mx-auto leading-relaxed">
-          Pure. Safe. Refreshing. Delivered at Your Doorstep.
+          Pure & Fresh Mineral Water, Delivered to Your Doorstep.
         </h2>
         
         <p className="text-xl lg:text-2xl mb-8 max-w-3xl mx-auto opacity-90">
@@ -32,11 +32,21 @@ const Hero = () => {
         </p>
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <Button variant="hero" size="lg" className="text-lg px-8 py-6">
-            Order Now
+          <Button 
+            variant="hero" 
+            size="lg" 
+            className="text-lg px-8 py-6"
+            onClick={() => document.getElementById('order-form')?.scrollIntoView({ behavior: 'smooth' })}
+          >
+            💧 Order Now
           </Button>
-          <Button variant="outline-light" size="lg" className="text-lg px-8 py-6">
-            View Products
+          <Button 
+            variant="outline-light" 
+            size="lg" 
+            className="text-lg px-8 py-6"
+            onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
+          >
+            Contact Us
           </Button>
         </div>
         

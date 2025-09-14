@@ -9,24 +9,48 @@ const products = [
     name: "20L Jar",
     subtitle: "Best for Homes & Offices",
     features: ["Purity you can trust", "Easy exchange system", "Cost-effective"],
-    price: "₹45",
+    price: "₹80",
     unit: "per jar"
   },
   {
     icon: Users,
-    name: "1L Bottles",
+    name: "2L Bottle (Pack of 9)",
     subtitle: "Perfect for Family Use",
-    features: ["Convenient packs", "Family-friendly size", "BPA-free bottles"],
-    price: "₹25",
-    unit: "per bottle"
+    features: ["Convenient family packs", "Premium quality bottles", "BPA-free material"],
+    price: "₹270",
+    unit: "per pack"
+  },
+  {
+    icon: Home,
+    name: "1L Bottle (Case of 12)",
+    subtitle: "Ideal for Daily Use",
+    features: ["Perfect portion size", "Easy to carry", "Bulk savings"],
+    price: "₹300",
+    unit: "per case"
   },
   {
     icon: Plane,
-    name: "500ml Pack",
-    subtitle: "Ideal for Travel & Gym",
-    features: ["Travel-friendly", "Pocket-sized", "Multi-pack options"],
-    price: "₹15",
-    unit: "per pack"
+    name: "500ml Bottle (Case of 24)",
+    subtitle: "Great for Travel & Gym",
+    features: ["Travel-friendly size", "Convenient for on-the-go", "Multi-pack value"],
+    price: "₹360",
+    unit: "per case"
+  },
+  {
+    icon: Users,
+    name: "250ml Bottle (Case of 24)",
+    subtitle: "Perfect for Kids & Events",
+    features: ["Kid-friendly size", "Event portions", "Easy handling"],
+    price: "₹240",
+    unit: "per case"
+  },
+  {
+    icon: Plane,
+    name: "200ml Bottle (Case of 48)",
+    subtitle: "Compact & Convenient",
+    features: ["Ultra-portable", "Bulk quantity", "Maximum value"],
+    price: "₹400",
+    unit: "per case"
   }
 ];
 

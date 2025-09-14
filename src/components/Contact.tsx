@@ -17,9 +17,9 @@ const Contact = () => {
           </p>
         </div>
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Contact Information */}
-          <div className="lg:col-span-1 space-y-6">
+        {/* Contact Information */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          <div className="space-y-6">
             <Card className="hover:shadow-soft transition-all duration-300">
               <CardContent className="p-6">
                 <div className="flex items-center gap-4 mb-4">
@@ -42,7 +42,7 @@ const Contact = () => {
                   </div>
                   <div>
                     <h3 className="font-semibold text-ocean-deep">Email</h3>
-                    <p className="text-muted-foreground">info@aquamarina.com</p>
+                    <p className="text-muted-foreground">orders@aquamarina.com</p>
                   </div>
                 </div>
               </CardContent>
@@ -84,7 +84,7 @@ const Contact = () => {
           </div>
           
           {/* Contact Form */}
-          <Card className="lg:col-span-2 shadow-water">
+          <Card className="shadow-water">
             <CardHeader>
               <CardTitle className="text-2xl text-ocean-deep text-center">
                 Send us a Message
@@ -104,13 +104,6 @@ const Contact = () => {
                   </label>
                   <Input placeholder="Enter your phone" />
                 </div>
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium text-ocean-deep mb-2 block">
-                  Delivery Address
-                </label>
-                <Input placeholder="Enter your full address" />
               </div>
               
               <div>
@@ -136,13 +129,18 @@ const Contact = () => {
             <CardContent className="p-8">
               <MessageCircle className="w-16 h-16 text-green-600 mx-auto mb-4" />
               <h3 className="text-2xl font-bold text-green-800 mb-2">
-                Order Instantly on WhatsApp
+                💬 Order Instantly on WhatsApp
               </h3>
               <p className="text-green-700 mb-6">
                 Quick and easy ordering through WhatsApp for immediate delivery.
               </p>
-              <Button variant="default" size="lg" className="bg-green-600 hover:bg-green-700 text-white">
-                Order on WhatsApp
+              <Button 
+                variant="default" 
+                size="lg" 
+                className="bg-green-600 hover:bg-green-700 text-white"
+                onClick={() => window.open('https://wa.me/919XXXXXXXXX?text=Hi! I would like to know more about your water delivery services.', '_blank')}
+              >
+                💬 Order on WhatsApp
               </Button>
             </CardContent>
           </Card>
