@@ -246,19 +246,6 @@ const Auth = () => {
                   </div>
                   
                   <div className="space-y-1 sm:space-y-2">
-                    <Label htmlFor="signup-address" className="text-sm">Address</Label>
-                    <Input
-                      id="signup-address"
-                      type="text"
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                      required
-                      placeholder="Enter your address"
-                      className="h-9 sm:h-10"
-                    />
-                  </div>
-                  
-                  <div className="space-y-1 sm:space-y-2">
                     <Label htmlFor="signup-password" className="text-sm">Password</Label>
                     <div className="relative">
                       <Input
