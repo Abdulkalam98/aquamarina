@@ -123,40 +123,143 @@ All colors MUST be HSL.
   }
 }
 
-/* Force Desktop Layout on Mobile - Override Responsive Behavior */
+/* Mobile-Friendly Desktop Layout */
 @layer utilities {
-  /* Override viewport meta tag behavior */
+  /* Ensure responsive design works on mobile while maintaining desktop layout */
   html {
-    min-width: 1200px;
+    min-width: 320px;
   }
   
   body {
-    min-width: 1200px;
+    min-width: 320px;
     overflow-x: auto;
   }
   
-  /* Force all containers to use desktop widths */
+  /* Mobile-friendly container that scales properly */
   .container {
-    min-width: 1200px !important;
+    min-width: 320px !important;
   }
   
-  /* Override responsive text sizes to always use large desktop sizes */
-  .text-6xl.lg\\:text-9xl {
-    font-size: 8rem !important;
-    line-height: 1 !important;
+  /* Scale down on smaller screens but keep desktop proportions */
+  @media (max-width: 768px) {
+    html {
+      font-size: 14px;
+    }
+    
+    .text-9xl {
+      font-size: 4rem !important;
+      line-height: 1 !important;
+    }
+    
+    .text-7xl {
+      font-size: 3rem !important;
+      line-height: 1 !important;
+    }
+    
+    .text-5xl {
+      font-size: 2.5rem !important;
+      line-height: 1.2 !important;
+    }
+    
+    .text-3xl {
+      font-size: 1.5rem !important;
+      line-height: 1.4 !important;
+    }
+    
+    /* Ensure buttons are touchable on mobile */
+    .btn, button {
+      min-height: 44px !important;
+      min-width: 44px !important;
+    }
+    
+    /* Make cards responsive on mobile */
+    .grid-cols-3 {
+      grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+      gap: 1rem !important;
+    }
+    
+    .grid-cols-2 {
+      grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+      gap: 1rem !important;
+    }
+    
+    /* Better spacing on mobile */
+    .px-6 {
+      padding-left: 1rem !important;
+      padding-right: 1rem !important;
+    }
+    
+    .gap-6 {
+      gap: 1rem !important;
+    }
+    
+    .gap-8 {
+      gap: 1.5rem !important;
+    }
   }
   
-  .text-2xl.lg\\:text-5xl {
-    font-size: 3rem !important;
-    line-height: 1 !important;
+  /* Keep desktop styles for larger screens */
+  @media (min-width: 769px) {
+    /* Override responsive text sizes to always use large desktop sizes */
+    .text-6xl.lg\\:text-9xl {
+      font-size: 8rem !important;
+      line-height: 1 !important;
+    }
+    
+    .text-2xl.lg\\:text-5xl {
+      font-size: 3rem !important;
+      line-height: 1 !important;
+    }
+    
+    .text-xl.lg\\:text-3xl {
+      font-size: 1.875rem !important;
+      line-height: 2.25rem !important;
+    }
+    
+    /* Desktop grid layouts */
+    .grid-cols-3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    }
+    
+    .grid-cols-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
   }
   
-  .text-xl.lg\\:text-3xl {
-    font-size: 1.875rem !important;
-    line-height: 2.25rem !important;
+  /* Force flex direction to row for buttons on all screens */
+  .flex.flex-col.sm\\:flex-row {
+    flex-direction: row !important;
   }
   
-  /* Force flex direction to row for buttons */
+  /* Mobile-specific adjustments */
+  @media (max-width: 768px) {
+    .flex.flex-col.sm\\:flex-row {
+      flex-direction: column !important;
+      gap: 1rem !important;
+    }
+    
+    /* Make buttons full width on mobile */
+    .flex.flex-col.sm\\:flex-row button {
+      width: 100% !important;
+    }
+    
+    /* Improve touch targets */
+    button, .btn {
+      padding: 0.75rem 1.5rem !important;
+      font-size: 1rem !important;
+    }
+    
+    /* Better mobile navigation */
+    .fixed.top-4.right-4 {
+      top: 1rem !important;
+      right: 1rem !important;
+    }
+    
+    .fixed.top-4.right-4 button {
+      padding: 0.5rem 1rem !important;
+      font-size: 0.875rem !important;
+    }
+  }
   .flex.flex-col.sm\\:flex-row {
     flex-direction: row !important;
   }
