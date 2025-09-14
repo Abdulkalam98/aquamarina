@@ -8,33 +8,52 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 210 45% 98%;
+    --foreground: 210 20% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 210 20% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 210 20% 15%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 195 100% 45%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 185 25% 95%;
+    --secondary-foreground: 210 20% 15%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 185 25% 95%;
+    --muted-foreground: 210 10% 50%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 175 85% 85%;
+    --accent-foreground: 210 20% 15%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 185 30% 88%;
+    --input: 185 30% 88%;
+    --ring: 195 100% 45%;
+
+    /* Aqua Marina Brand Colors */
+    --aqua-primary: 195 100% 45%;
+    --aqua-secondary: 185 85% 65%;
+    --aqua-light: 195 50% 85%;
+    --ocean-deep: 210 85% 25%;
+    --wave-blue: 200 100% 55%;
+    
+    /* Gradients */
+    --gradient-ocean: linear-gradient(135deg, hsl(var(--aqua-primary)), hsl(var(--wave-blue)));
+    --gradient-wave: linear-gradient(180deg, hsl(var(--aqua-light)), hsl(var(--background)));
+    --gradient-hero: linear-gradient(135deg, hsl(var(--ocean-deep)), hsl(var(--aqua-primary)));
+    
+    /* Shadows */
+    --shadow-water: 0 10px 40px -10px hsl(var(--aqua-primary) / 0.3);
+    --shadow-soft: 0 4px 20px -4px hsl(var(--aqua-primary) / 0.15);
+    
+    /* Transitions */
+    --transition-wave: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 
     --radius: 0.5rem;
 
