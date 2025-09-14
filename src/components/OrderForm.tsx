@@ -2,66 +2,98 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { Calculator, MessageCircle, Send } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { Truck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-
-const products = [
-  { id: "20l-jar", name: "20L Jar", price: 80 },
-  { id: "2l-pack", name: "2L Bottle (Pack of 9)", price: 270 },
-  { id: "1l-case", name: "1L Bottle (Case of 12)", price: 300 },
-  { id: "500ml-case", name: "500ml Bottle (Case of 24)", price: 360 },
-  { id: "250ml-case", name: "250ml Bottle (Case of 24)", price: 240 },
-  { id: "200ml-case", name: "200ml Bottle (Case of 48)", price: 400 },
-];
+import { useToast } from "@/hooks/use-toast";
+import ProductSelector from "./ProductSelector";
+import Cart, { CartItem } from "./Cart";
 
 const serviceTypes = [
-  "Subscription",
-  "Bulk Order", 
-  "Office Supply",
-  "Home Delivery"
+  "One-time Delivery",
+  "Weekly Subscription", 
+  "Monthly Subscription"
 ];
 
 const OrderForm = () => {
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [formData, setFormData] = useState({
     fullName: "",
     phone: "",
     email: "",
     address: "",
     serviceType: "",
-    product: "",
-    quantity: 1,
     deliveryDate: "",
     deliveryTime: "",
     specialInstructions: ""
   });
-  
-  const [totalCost, setTotalCost] = useState(0);
+
   const { toast } = useToast();
+  const totalCost = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-  const calculateTotal = (productId: string, quantity: number) => {
-    const product = products.find(p => p.id === productId);
-    return product ? product.price * quantity : 0;
+  const handleAddToCart = (item: CartItem) => {
+    setCartItems(prev => [...prev, item]);
   };
 
-  const handleProductChange = (productId: string) => {
-    setFormData(prev => ({ ...prev, product: productId }));
-    setTotalCost(calculateTotal(productId, formData.quantity));
+  const handleUpdateQuantity = (id: string, quantity: number) => {
+    setCartItems(prev => 
+      prev.map(item => 
+        item.id === id ? { ...item, quantity } : item
+      )
+    );
   };
 
-  const handleQuantityChange = (quantity: number) => {
-    setFormData(prev => ({ ...prev, quantity }));
-    if (formData.product) {
-      setTotalCost(calculateTotal(formData.product, quantity));
+  const handleRemoveItem = (id: string) => {
+    setCartItems(prev => prev.filter(item => item.id !== id));
+  };
+
+  const handleClearCart = () => {
+    setCartItems([]);
+    toast({ description: "Cart cleared successfully" });
+  };
+
+  const sendAdminNotification = async (orderId: string) => {
+    try {
+      await supabase.functions.invoke('send-admin-notification', {
+        body: {
+          orderId,
+          customerName: formData.fullName,
+          customerPhone: formData.phone,
+          customerEmail: formData.email,
+          products: cartItems.map(item => ({
+            name: item.name,
+            quantity: item.quantity,
+            size: item.size,
+            price: item.price
+          })),
+          totalCost,
+          deliveryAddress: formData.address,
+          deliveryDate: formData.deliveryDate,
+          deliveryTime: formData.deliveryTime,
+          specialInstructions: formData.specialInstructions,
+          serviceType: formData.serviceType
+        }
+      });
+    } catch (error) {
+      console.error('Error sending admin notification:', error);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.fullName || !formData.phone || !formData.address || !formData.serviceType || !formData.product) {
+    
+    if (cartItems.length === 0) {
+      toast({
+        title: "Cart is empty",
+        description: "Please add some products to your cart before placing an order.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!formData.fullName || !formData.phone || !formData.address || !formData.serviceType) {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields.",
@@ -71,326 +103,199 @@ const OrderForm = () => {
     }
 
     try {
-      // Save order to Supabase
-      const { error } = await supabase
-        .from('orders')
-        .insert([
-          {
+      const orders = [];
+      for (const item of cartItems) {
+        const { data, error } = await supabase
+          .from('orders')
+          .insert({
             full_name: formData.fullName,
             phone: formData.phone,
             email: formData.email || null,
             address: formData.address,
             service_type: formData.serviceType,
-            product: formData.product,
-            quantity: formData.quantity,
-            total_cost: totalCost,
+            product: `${item.name} - ${item.size}`,
+            quantity: item.quantity,
+            total_cost: item.price * item.quantity,
             delivery_date: formData.deliveryDate || null,
             delivery_time: formData.deliveryTime || null,
-            special_instructions: formData.specialInstructions || null
-          }
-        ]);
+            special_instructions: formData.specialInstructions || null,
+            status: 'pending'
+          })
+          .select()
+          .single();
 
-      if (error) {
-        toast({
-          title: "Error",
-          description: "Failed to submit order. Please try again.",
-          variant: "destructive"
-        });
-        return;
+        if (error) throw error;
+        orders.push(data);
+      }
+
+      if (orders.length > 0) {
+        await sendAdminNotification(orders[0].id);
       }
 
       toast({
-        title: "Order Submitted!",
-        description: "We'll contact you soon to confirm your order.",
+        title: "Order Placed Successfully!",
+        description: `Your order for ₹${totalCost} has been received. You will be contacted soon for delivery confirmation.`,
       });
-      
-      // Reset form
+
       setFormData({
-        fullName: "",
-        phone: "",
-        email: "",
-        address: "",
-        serviceType: "",
-        product: "",
-        quantity: 1,
-        deliveryDate: "",
-        deliveryTime: "",
-        specialInstructions: ""
+        fullName: "", phone: "", email: "", address: "", serviceType: "",
+        deliveryDate: "", deliveryTime: "", specialInstructions: ""
       });
-      setTotalCost(0);
-    } catch (error) {
+      setCartItems([]);
+
+    } catch (error: any) {
       toast({
-        title: "Error",
-        description: "Something went wrong. Please try again.",
+        title: "Order Failed",
+        description: error.message || "Something went wrong. Please try again.",
         variant: "destructive"
       });
     }
   };
 
   const handleWhatsAppOrder = async () => {
-    if (!formData.fullName || !formData.phone || !formData.address || !formData.serviceType || !formData.product) {
+    if (cartItems.length === 0 || !formData.fullName || !formData.phone || !formData.address || !formData.serviceType) {
       toast({
         title: "Missing Information",
-        description: "Please fill in all required fields before ordering via WhatsApp.",
+        description: "Please fill in all required fields before proceeding to WhatsApp.",
         variant: "destructive"
       });
       return;
     }
 
     try {
-      // Save order to Supabase first
-      const { error } = await supabase
-        .from('orders')
-        .insert([
-          {
+      const orders = [];
+      for (const item of cartItems) {
+        const { data, error } = await supabase
+          .from('orders')
+          .insert({
             full_name: formData.fullName,
             phone: formData.phone,
             email: formData.email || null,
             address: formData.address,
             service_type: formData.serviceType,
-            product: formData.product,
-            quantity: formData.quantity,
-            total_cost: totalCost,
+            product: `${item.name} - ${item.size}`,
+            quantity: item.quantity,
+            total_cost: item.price * item.quantity,
             delivery_date: formData.deliveryDate || null,
             delivery_time: formData.deliveryTime || null,
-            special_instructions: formData.specialInstructions || null
-          }
-        ]);
+            special_instructions: formData.specialInstructions || null,
+            status: 'pending'
+          })
+          .select()
+          .single();
 
-      if (error) {
-        toast({
-          title: "Error",
-          description: "Failed to save order. Please try again.",
-          variant: "destructive"
-        });
-        return;
+        if (error) throw error;
+        orders.push(data);
       }
 
-      const selectedProduct = products.find(p => p.id === formData.product);
-      const message = `Hi! I'd like to place an order:
-    
-Name: ${formData.fullName}
-Phone: ${formData.phone}
-Service: ${formData.serviceType}
-Product: ${selectedProduct?.name}
-Quantity: ${formData.quantity}
-Total: ₹${totalCost}
-Address: ${formData.address}
-${formData.deliveryDate ? `Preferred Date: ${formData.deliveryDate}` : ''}
-${formData.deliveryTime ? `Preferred Time: ${formData.deliveryTime}` : ''}
-${formData.specialInstructions ? `Special Instructions: ${formData.specialInstructions}` : ''}`;
+      if (orders.length > 0) {
+        await sendAdminNotification(orders[0].id);
+      }
 
-      const whatsappUrl = `https://wa.me/919XXXXXXXXX?text=${encodeURIComponent(message)}`;
-      window.open(whatsappUrl, '_blank');
+      const productsList = cartItems.map(
+        item => `• ${item.quantity} × ${item.size} - ₹${item.price * item.quantity}`
+      ).join('%0A');
+      
+      const message = `Hi! I would like to place a water delivery order:%0A%0A*Order Details:*%0A${productsList}%0A%0A*Total: ₹${totalCost}*%0A%0A*Customer Details:*%0AName: ${formData.fullName}%0APhone: ${formData.phone}%0AAddress: ${formData.address}%0AService: ${formData.serviceType}${formData.deliveryDate ? `%0ADelivery Date: ${formData.deliveryDate}` : ''}${formData.deliveryTime ? `%0ADelivery Time: ${formData.deliveryTime}` : ''}${formData.specialInstructions ? `%0ASpecial Instructions: ${formData.specialInstructions}` : ''}%0A%0APlease confirm this order. Thank you!`;
 
-      // Reset form after successful WhatsApp order
+      window.open(`https://wa.me/918124886893?text=${message}`, '_blank');
+
       setFormData({
-        fullName: "",
-        phone: "",
-        email: "",
-        address: "",
-        serviceType: "",
-        product: "",
-        quantity: 1,
-        deliveryDate: "",
-        deliveryTime: "",
-        specialInstructions: ""
+        fullName: "", phone: "", email: "", address: "", serviceType: "",
+        deliveryDate: "", deliveryTime: "", specialInstructions: ""
       });
-      setTotalCost(0);
+      setCartItems([]);
 
-      toast({
-        title: "Order Saved!",
-        description: "Order saved and WhatsApp opened. Complete your order on WhatsApp.",
-      });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Something went wrong. Please try again.",
+        description: error.message || "Something went wrong. Please try again.",
         variant: "destructive"
       });
     }
   };
 
   return (
-    <section id="order-form" className="py-20 bg-gradient-to-b from-background to-aqua-light/20">
+    <section className="py-20 bg-gradient-to-b from-aqua-light/10 to-background">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
-          <h2 className="text-4xl lg:text-5xl font-bold text-ocean-deep mb-4">
-            Place Your Order
-          </h2>
+          <h2 className="text-4xl lg:text-5xl font-bold text-ocean-deep mb-4">Place Your Order</h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Order directly from our website with instant price calculation.
+            Select your products and provide delivery details for fresh water delivery
           </p>
         </div>
 
-        <div className="max-w-4xl mx-auto">
-          <Card className="shadow-water">
-            <CardHeader>
-              <CardTitle className="text-2xl text-ocean-deep flex items-center gap-3">
-                <Calculator className="w-8 h-8" />
-                Order Form
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-8">
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Personal Information */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <Label htmlFor="fullName" className="text-ocean-deep">Full Name *</Label>
-                    <Input
-                      id="fullName"
-                      value={formData.fullName}
-                      onChange={(e) => setFormData(prev => ({ ...prev, fullName: e.target.value }))}
-                      placeholder="Enter your full name"
-                      required
-                    />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-6">
+            <ProductSelector onAddToCart={handleAddToCart} />
+            
+            <Card className="shadow-water">
+              <CardHeader>
+                <CardTitle className="text-2xl text-ocean-deep text-center">Delivery Information</CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="fullName">Full Name *</Label>
+                      <Input id="fullName" value={formData.fullName} onChange={(e) => setFormData({...formData, fullName: e.target.value})} placeholder="Enter your full name" required />
+                    </div>
+                    <div>
+                      <Label htmlFor="phone">Phone Number *</Label>
+                      <Input id="phone" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} placeholder="Enter your phone number" required />
+                    </div>
                   </div>
+
                   <div>
-                    <Label htmlFor="phone" className="text-ocean-deep">Phone Number (WhatsApp Preferred) *</Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      value={formData.phone}
-                      onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                      placeholder="Enter your phone number"
-                      required
-                    />
+                    <Label htmlFor="email">Email Address (Optional)</Label>
+                    <Input id="email" type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} placeholder="Enter your email address" />
                   </div>
-                </div>
 
-                <div>
-                  <Label htmlFor="email" className="text-ocean-deep">Email Address (Optional)</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                    placeholder="Enter your email"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="address" className="text-ocean-deep">Delivery Address *</Label>
-                  <Textarea
-                    id="address"
-                    value={formData.address}
-                    onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-                    placeholder="Enter your complete delivery address"
-                    required
-                  />
-                </div>
-
-                {/* Service and Product Selection */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <Label className="text-ocean-deep">Service Type *</Label>
-                    <Select onValueChange={(value) => setFormData(prev => ({ ...prev, serviceType: value }))}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select service type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {serviceTypes.map(type => (
-                          <SelectItem key={type} value={type}>{type}</SelectItem>
-                        ))}
-                      </SelectContent>
+                    <Label htmlFor="serviceType">Service Type *</Label>
+                    <Select value={formData.serviceType} onValueChange={(value) => setFormData({...formData, serviceType: value})}>
+                      <SelectTrigger><SelectValue placeholder="Choose service type" /></SelectTrigger>
+                      <SelectContent>{serviceTypes.map((type) => (<SelectItem key={type} value={type}>{type}</SelectItem>))}</SelectContent>
                     </Select>
                   </div>
-                  <div>
-                    <Label className="text-ocean-deep">Product Selection *</Label>
-                    <Select onValueChange={handleProductChange}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select product" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {products.map(product => (
-                          <SelectItem key={product.id} value={product.id}>
-                            {product.name} - ₹{product.price}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
-                    <Label htmlFor="quantity" className="text-ocean-deep">Quantity *</Label>
-                    <Input
-                      id="quantity"
-                      type="number"
-                      min="1"
-                      value={formData.quantity}
-                      onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1)}
-                      required
-                    />
+                    <Label htmlFor="address">Delivery Address *</Label>
+                    <Textarea id="address" value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} placeholder="Enter complete delivery address" required className="min-h-24" />
                   </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="deliveryDate">Preferred Delivery Date</Label>
+                      <Input id="deliveryDate" type="date" value={formData.deliveryDate} onChange={(e) => setFormData({...formData, deliveryDate: e.target.value})} />
+                    </div>
+                    <div>
+                      <Label htmlFor="deliveryTime">Preferred Delivery Time</Label>
+                      <Input id="deliveryTime" value={formData.deliveryTime} onChange={(e) => setFormData({...formData, deliveryTime: e.target.value})} placeholder="e.g., 10 AM - 2 PM" />
+                    </div>
+                  </div>
+
                   <div>
-                    <Label htmlFor="deliveryDate" className="text-ocean-deep">Preferred Delivery Date</Label>
-                    <Input
-                      id="deliveryDate"
-                      type="date"
-                      value={formData.deliveryDate}
-                      onChange={(e) => setFormData(prev => ({ ...prev, deliveryDate: e.target.value }))}
-                    />
+                    <Label htmlFor="specialInstructions">Special Instructions</Label>
+                    <Textarea id="specialInstructions" value={formData.specialInstructions} onChange={(e) => setFormData({...formData, specialInstructions: e.target.value})} placeholder="Any special delivery instructions..." className="min-h-20" />
                   </div>
-                  <div>
-                    <Label htmlFor="deliveryTime" className="text-ocean-deep">Preferred Time</Label>
-                    <Select onValueChange={(value) => setFormData(prev => ({ ...prev, deliveryTime: value }))}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select time slot" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="morning">Morning (7 AM - 12 PM)</SelectItem>
-                        <SelectItem value="evening">Evening (4 PM - 8 PM)</SelectItem>
-                      </SelectContent>
-                    </Select>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Button type="submit" variant="water" size="lg" className="w-full text-lg">
+                      <Truck className="w-5 h-5 mr-2" />Submit Order
+                    </Button>
+                    <Button type="button" onClick={handleWhatsAppOrder} variant="outline" size="lg" className="w-full text-lg border-green-500 text-green-700 hover:bg-green-50">
+                      💬 Order via WhatsApp
+                    </Button>
                   </div>
-                </div>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
 
-                <div>
-                  <Label htmlFor="instructions" className="text-ocean-deep">Special Instructions</Label>
-                  <Textarea
-                    id="instructions"
-                    value={formData.specialInstructions}
-                    onChange={(e) => setFormData(prev => ({ ...prev, specialInstructions: e.target.value }))}
-                    placeholder="Any special delivery instructions or requirements..."
-                  />
-                </div>
-
-                {/* Price Display */}
-                {totalCost > 0 && (
-                  <Card className="bg-gradient-to-r from-aqua-light/20 to-wave-blue/20 border-aqua-primary/30">
-                    <CardContent className="p-6">
-                      <div className="text-center">
-                        <h3 className="text-2xl font-bold text-ocean-deep mb-2">Total Cost</h3>
-                        <p className="text-4xl font-bold text-aqua-primary">₹{totalCost}</p>
-                        <p className="text-sm text-muted-foreground mt-2">
-                          {formData.quantity} x {products.find(p => p.id === formData.product)?.name}
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Submit Buttons */}
-                <div className="flex flex-col sm:flex-row gap-4 pt-6">
-                  <Button type="submit" variant="water" size="lg" className="flex-1">
-                    <Send className="w-5 h-5 mr-2" />
-                    Submit Order
-                  </Button>
-                  <Button 
-                    type="button" 
-                    onClick={handleWhatsAppOrder}
-                    className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                    size="lg"
-                  >
-                    <MessageCircle className="w-5 h-5 mr-2" />
-                    💬 Order via WhatsApp
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
+          <div className="lg:col-span-1">
+            <Cart items={cartItems} onUpdateQuantity={handleUpdateQuantity} onRemoveItem={handleRemoveItem} onClearCart={handleClearCart} />
+          </div>
         </div>
       </div>
     </section>

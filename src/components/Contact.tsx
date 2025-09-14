@@ -28,7 +28,7 @@ const Contact = () => {
                   </div>
                   <div>
                     <h3 className="font-semibold text-ocean-deep">Phone</h3>
-                    <p className="text-muted-foreground">+91-9876543210</p>
+                    <p className="text-muted-foreground">+91-8124886893</p>
                   </div>
                 </div>
               </CardContent>
@@ -42,7 +42,7 @@ const Contact = () => {
                   </div>
                   <div>
                     <h3 className="font-semibold text-ocean-deep">Email</h3>
-                    <p className="text-muted-foreground">orders@aquamarina.com</p>
+                    <p className="text-muted-foreground">abdulkalam081998@gmail.com</p>
                   </div>
                 </div>
               </CardContent>
@@ -56,10 +56,10 @@ const Contact = () => {
                   </div>
                   <div>
                     <h3 className="font-semibold text-ocean-deep">Address</h3>
-                    <p className="text-muted-foreground">
-                      123 Water Street, Industrial Area<br />
-                      Mumbai, Maharashtra 400001
-                    </p>
+                     <p className="text-muted-foreground">
+                       Subbarayan Nagar, Jagir Ammapalayam<br />
+                       Salem, Tamil Nadu 636302
+                     </p>
                   </div>
                 </div>
               </CardContent>
@@ -138,7 +138,7 @@ const Contact = () => {
                 variant="default" 
                 size="lg" 
                 className="bg-green-600 hover:bg-green-700 text-white"
-                onClick={() => window.open('https://wa.me/919XXXXXXXXX?text=Hi! I would like to know more about your water delivery services.', '_blank')}
+                onClick={() => window.open('https://wa.me/918124886893?text=Hi! I would like to know more about your water delivery services.', '_blank')}
               >
                 💬 Order on WhatsApp
               </Button>

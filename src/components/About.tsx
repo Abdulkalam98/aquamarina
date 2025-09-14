@@ -37,8 +37,8 @@ const About = () => {
             
             <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
               At Aqua Marina, we believe clean drinking water is a right, not a luxury. 
-              Established in 2015, we have been delivering safe and pure mineral water to 
-              households, offices, and events across the region.
+               Established in 2008, we have been delivering safe and pure mineral water to 
+               households, offices, and events across the region.
             </p>
             
             <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
