@@ -36,15 +36,27 @@ const Index = () => {
             <LogIn className="w-4 h-4 mr-2" />
             Sign In
           </Button>
-        ) : userRole === 'admin' && (
-          <Button 
-            onClick={() => navigate('/admin-panel')}
-            size="sm"
-            className="bg-white/90 text-ocean-deep hover:bg-white shadow-lg"
-          >
-            <Settings className="w-4 h-4 mr-2" />
-            Admin Panel
-          </Button>
+        ) : (
+          <div className="flex gap-2">
+            {userRole === 'admin' && (
+              <Button 
+                onClick={() => navigate('/admin-panel')}
+                size="sm"
+                className="bg-white/90 text-ocean-deep hover:bg-white shadow-lg"
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                Admin Panel
+              </Button>
+            )}
+            <Button 
+              onClick={() => navigate('/auth')}
+              size="sm"
+              variant="outline"
+              className="bg-white/90 text-ocean-deep hover:bg-white shadow-lg border-ocean-deep/20"
+            >
+              View Auth Page
+            </Button>
+          </div>
         )}
       </div>
 
@@ -52,9 +64,13 @@ const Index = () => {
       <Features />
       <Services />
       <Products />
-      <OrderForm />
+      <div id="order-form">
+        <OrderForm />
+      </div>
       <About />
-      <Contact />
+      <div id="contact">
+        <Contact />
+      </div>
       <Footer />
     </div>
   );

@@ -16,7 +16,10 @@ import Cart, { type CartItem } from "./Cart";
 const serviceTypes = [
   "One-time Delivery",
   "Weekly Subscription", 
-  "Monthly Subscription"
+  "Monthly Subscription",
+  "Bulk Orders",
+  "Office Supply",
+  "Home Delivery"
 ];
 
 const OrderForm = () => {
@@ -161,16 +164,27 @@ const OrderForm = () => {
       try {
         await supabase.functions.invoke('send-admin-notification', {
           body: {
+            orderId: 'ORDER_' + Date.now(), // Temporary ID since we have multiple items
             customerName: formData.fullName,
             customerPhone: formData.phone,
             customerEmail: formData.email,
-            items: cartItems,
-            totalCost: totalCost
+            products: cartItems.map(item => ({
+              name: item.name,
+              quantity: item.quantity,
+              size: item.size,
+              price: item.price
+            })),
+            totalCost: totalCost,
+            deliveryAddress: formData.address,
+            deliveryDate: formData.deliveryDate,
+            deliveryTime: formData.deliveryTime,
+            specialInstructions: formData.specialInstructions,
+            serviceType: formData.serviceType
           }
         });
       } catch (notificationError) {
         console.error('Error sending admin notification:', notificationError);
-        // Don't fail the order if notification fails
+        // Don't fail the order if notification fails - database trigger will handle it
       }
 
       toast({
@@ -217,6 +231,7 @@ const OrderForm = () => {
         const { data, error } = await supabase
           .from('orders')
           .insert({
+            user_id: user.id, // Add user_id for RLS compatibility
             full_name: formData.fullName,
             phone: formData.phone,
             email: formData.email || null,
@@ -237,8 +252,33 @@ const OrderForm = () => {
         orders.push(data);
       }
 
+      // Send admin notification for the first order (trigger will handle all)
       if (orders.length > 0) {
-        await sendAdminNotification(orders[0].id);
+        try {
+          await supabase.functions.invoke('send-admin-notification', {
+            body: {
+              orderId: orders[0].id,
+              customerName: formData.fullName,
+              customerPhone: formData.phone,
+              customerEmail: formData.email,
+              products: cartItems.map(item => ({
+                name: item.name,
+                quantity: item.quantity,
+                size: item.size,
+                price: item.price
+              })),
+              totalCost,
+              deliveryAddress: formData.address,
+              deliveryDate: formData.deliveryDate,
+              deliveryTime: formData.deliveryTime,
+              specialInstructions: formData.specialInstructions,
+              serviceType: formData.serviceType
+            }
+          });
+        } catch (notificationError) {
+          console.error('Error sending admin notification:', notificationError);
+          // Don't fail the order if notification fails - trigger will handle it
+        }
       }
 
       const productsList = cartItems.map(
@@ -339,6 +379,9 @@ const OrderForm = () => {
                         <SelectItem value="One-time Delivery">One-time Delivery</SelectItem>
                         <SelectItem value="Weekly Subscription">Weekly Subscription</SelectItem>
                         <SelectItem value="Monthly Subscription">Monthly Subscription</SelectItem>
+                        <SelectItem value="Bulk Orders">Bulk Orders</SelectItem>
+                        <SelectItem value="Office Supply">Office Supply</SelectItem>
+                        <SelectItem value="Home Delivery">Home Delivery</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -367,12 +410,13 @@ const OrderForm = () => {
                     </div>
                     <div>
                       <Label htmlFor="deliveryTime">Preferred Delivery Time</Label>
-                      <Input 
-                        id="deliveryTime" 
-                        value={formData.deliveryTime} 
-                        onChange={(e) => setFormData({...formData, deliveryTime: e.target.value})} 
-                        placeholder="e.g., 10 AM - 2 PM" 
-                      />
+                      <Select value={formData.deliveryTime} onValueChange={(value) => setFormData({...formData, deliveryTime: value})}>
+                        <SelectTrigger><SelectValue placeholder="Choose delivery time" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="9 AM - 1 PM">9 AM - 1 PM</SelectItem>
+                          <SelectItem value="1 PM - 6 PM">1 PM - 6 PM</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
 

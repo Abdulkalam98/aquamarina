@@ -28,7 +28,8 @@ const Auth = () => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        if (session?.user) {
+        // Only redirect on successful sign-in, not on page load
+        if (event === 'SIGNED_IN' && session?.user) {
           navigate("/");
         }
       }
@@ -38,9 +39,7 @@ const Auth = () => {
       setSession(session);
       setUser(session?.user ?? null);
       
-      if (session?.user) {
-        navigate("/");
-      }
+      // Don't auto-redirect on page load, let user see the auth page
     });
 
     return () => subscription.unsubscribe();
@@ -126,18 +125,73 @@ const Auth = () => {
   };
 
   if (user) {
-    return null; // Will redirect via useEffect
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-aqua-light/10 via-background to-wave-blue/5 flex items-center justify-center p-4">
+        <div className="flex flex-col items-center w-full max-w-md space-y-6">
+          {/* Logo */}
+          <div className="flex items-center space-x-3">
+            <div className="w-12 h-12 bg-gradient-to-br from-aqua-primary to-wave-blue rounded-full flex items-center justify-center shadow-lg">
+              <Droplet className="w-8 h-8 text-white" />
+            </div>
+            <span className="text-3xl font-bold bg-gradient-to-r from-ocean-deep to-aqua-primary bg-clip-text text-transparent">
+              Aqua Marina
+            </span>
+          </div>
+
+          <Card className="w-full border-aqua-light/30 shadow-water">
+            <CardHeader>
+              <CardTitle className="text-center text-ocean-deep">Already Logged In</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="text-center space-y-2">
+                <p className="text-sm text-gray-600">Welcome back!</p>
+                <p className="font-semibold">{user.email}</p>
+              </div>
+              
+              <div className="flex flex-col gap-2">
+                <Button 
+                  onClick={() => navigate('/')}
+                  className="w-full"
+                >
+                  Go to Main Page
+                </Button>
+                <Button 
+                  onClick={async () => {
+                    try {
+                      const { error } = await supabase.auth.signOut();
+                      if (error) throw error;
+                      toast({ description: "Signed out successfully" });
+                    } catch (error: any) {
+                      toast({
+                        description: error.message,
+                        variant: "destructive"
+                      });
+                    }
+                  }}
+                  variant="outline"
+                  className="w-full"
+                >
+                  Sign Out
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-aqua-light/10 via-background to-wave-blue/5 flex items-center justify-center p-4">
       <div className="flex flex-col items-center w-full max-w-md space-y-6">
         {/* Logo */}
-        <div className="flex items-center space-x-2">
-          <div className="w-10 h-10 bg-gradient-to-br from-aqua-primary to-wave-blue rounded-full flex items-center justify-center">
-            <Droplet className="w-6 h-6 text-white" />
+        <div className="flex items-center space-x-3">
+          <div className="w-12 h-12 bg-gradient-to-br from-aqua-primary to-wave-blue rounded-full flex items-center justify-center shadow-lg">
+            <Droplet className="w-8 h-8 text-white" />
           </div>
-          <span className="text-2xl font-bold text-ocean-deep">AquaPure</span>
+          <span className="text-3xl font-bold bg-gradient-to-r from-ocean-deep to-aqua-primary bg-clip-text text-transparent">
+            Aqua Marina
+          </span>
         </div>
 
         <Card className="w-full border-aqua-light/30 shadow-water">
