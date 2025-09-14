@@ -72,7 +72,7 @@ const Products = () => {
         <div className="text-center mb-20 animate-fade-in">
           <div className="flex justify-center items-center mb-6">
             <Droplets className="w-12 h-12 text-aqua-primary mr-4 animate-float" />
-            <h2 className="text-5xl lg:text-7xl font-bold gradient-text">
+            <h2 className="text-7xl font-bold gradient-text">
               Our Premium Products
             </h2>
             <Sparkles className="w-12 h-12 text-wave-blue ml-4 animate-pulse" />
@@ -82,7 +82,7 @@ const Products = () => {
           </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-20">
+        <div className="grid grid-cols-3 gap-8 mb-20">
           {products.map((product, index) => (
             <Card 
               key={index} 

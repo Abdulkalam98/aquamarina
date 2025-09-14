@@ -309,7 +309,7 @@ const OrderForm = () => {
       <div className="container mx-auto px-6">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h2 className="text-4xl lg:text-5xl font-bold text-ocean-deep mb-4">
+            <h2 className="text-5xl font-bold text-ocean-deep mb-4">
               Place Your Order
             </h2>
             <p className="text-xl text-muted-foreground">
@@ -327,8 +327,8 @@ const OrderForm = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-6">
+        <div className="grid grid-cols-3 gap-8">
+          <div className="col-span-2 space-y-6">
             <ProductSelector onAddToCart={handleAddToCart} />
             
             <Card className="shadow-water">
@@ -337,7 +337,7 @@ const OrderForm = () => {
               </CardHeader>
               <CardContent className="p-6 space-y-6">
                 <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="fullName">Full Name *</Label>
                       <Input 
@@ -398,7 +398,7 @@ const OrderForm = () => {
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="deliveryDate">Preferred Delivery Date</Label>
                       <Input 
@@ -446,7 +446,7 @@ const OrderForm = () => {
             </Card>
           </div>
 
-          <div className="lg:col-span-1">
+          <div className="col-span-1">
             <Cart 
               items={cartItems} 
               onUpdateQuantity={handleUpdateQuantity} 

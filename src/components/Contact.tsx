@@ -19,7 +19,7 @@ const Contact = () => {
         <div className="text-center mb-20 animate-fade-in">
           <div className="flex justify-center items-center mb-6">
             <MessageCircle className="w-12 h-12 text-aqua-primary mr-4 animate-pulse" />
-            <h2 className="text-5xl lg:text-7xl font-bold gradient-text">
+            <h2 className="text-7xl font-bold gradient-text">
               Contact Us
             </h2>
             <Sparkles className="w-12 h-12 text-wave-blue ml-4 animate-bounce" />
@@ -30,7 +30,7 @@ const Contact = () => {
         </div>
         
         {/* Contact Information */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
+        <div className="grid grid-cols-2 gap-16">
           <div className="space-y-8 animate-slide-up">
             <Card className="hover-lift glass border-2 border-aqua-light/30 hover:border-aqua-primary/50 transition-all duration-500">
               <CardContent className="p-8">
@@ -103,7 +103,7 @@ const Contact = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-ocean-deep mb-2 block">
                     Full Name

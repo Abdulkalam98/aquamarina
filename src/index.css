@@ -123,6 +123,74 @@ All colors MUST be HSL.
   }
 }
 
+/* Force Desktop Layout on Mobile - Override Responsive Behavior */
+@layer utilities {
+  /* Override viewport meta tag behavior */
+  html {
+    min-width: 1200px;
+  }
+  
+  body {
+    min-width: 1200px;
+    overflow-x: auto;
+  }
+  
+  /* Force all containers to use desktop widths */
+  .container {
+    min-width: 1200px !important;
+  }
+  
+  /* Override responsive text sizes to always use large desktop sizes */
+  .text-6xl.lg\\:text-9xl {
+    font-size: 8rem !important;
+    line-height: 1 !important;
+  }
+  
+  .text-2xl.lg\\:text-5xl {
+    font-size: 3rem !important;
+    line-height: 1 !important;
+  }
+  
+  .text-xl.lg\\:text-3xl {
+    font-size: 1.875rem !important;
+    line-height: 2.25rem !important;
+  }
+  
+  /* Force flex direction to row for buttons */
+  .flex.flex-col.sm\\:flex-row {
+    flex-direction: row !important;
+  }
+  
+  /* Override responsive heights */
+  .h-16.lg\\:h-20 {
+    height: 5rem !important;
+  }
+  
+  /* Force desktop padding and margins */
+  .px-6 {
+    padding-left: 1.5rem !important;
+    padding-right: 1.5rem !important;
+  }
+  
+  /* Override responsive grid layouts */
+  .grid-cols-1.md\\:grid-cols-2.lg\\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+  
+  .grid-cols-1.lg\\:grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  
+  /* Force desktop spacing */
+  .gap-4.lg\\:gap-8 {
+    gap: 2rem !important;
+  }
+  
+  .gap-6.lg\\:gap-12 {
+    gap: 3rem !important;
+  }
+}
+
 /* Custom Animations for Aqua Marina */
 @keyframes fade-in {
   from {

@@ -33,20 +33,20 @@ const Hero = () => {
             <Droplets className="w-16 h-16 text-aqua-light mr-6 animate-pulse" />
             <div className="absolute -top-2 -right-2 w-4 h-4 bg-aqua-light rounded-full animate-ping"></div>
           </div>
-          <h1 className="text-6xl lg:text-9xl font-bold bg-gradient-to-r from-aqua-light to-white bg-clip-text text-transparent drop-shadow-2xl">
+          <h1 className="text-9xl font-bold bg-gradient-to-r from-aqua-light to-white bg-clip-text text-transparent drop-shadow-2xl">
             Aqua Marina
           </h1>
         </div>
         
-        <h2 className="text-2xl lg:text-5xl font-light mb-8 max-w-4xl mx-auto leading-relaxed animate-slide-up delay-300 bg-gradient-to-r from-aqua-light/90 to-white/80 bg-clip-text text-transparent">
+        <h2 className="text-5xl font-light mb-8 max-w-4xl mx-auto leading-relaxed animate-slide-up delay-300 bg-gradient-to-r from-aqua-light/90 to-white/80 bg-clip-text text-transparent">
           Pure & Fresh Mineral Water, Delivered to Your Doorstep.
         </h2>
         
-        <p className="text-xl lg:text-3xl mb-12 max-w-3xl mx-auto opacity-90 animate-slide-up delay-500 leading-relaxed">
+        <p className="text-3xl mb-12 max-w-3xl mx-auto opacity-90 animate-slide-up delay-500 leading-relaxed">
           We bring you premium quality mineral water – tested, certified, and trusted by families and businesses.
         </p>
         
-        <div className="flex flex-col sm:flex-row gap-6 justify-center items-center animate-slide-up delay-700">
+        <div className="flex flex-row gap-6 justify-center items-center animate-slide-up delay-700">
           <Button 
             variant="hero" 
             size="lg" 
@@ -90,7 +90,7 @@ const Hero = () => {
         <svg 
           viewBox="0 0 1200 120" 
           preserveAspectRatio="none"
-          className="w-full h-16 lg:h-20"
+          className="w-full h-20"
         >
           <path 
             d="M0,60 C300,120 900,0 1200,60 L1200,120 L0,120 Z" 
