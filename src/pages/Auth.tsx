@@ -7,12 +7,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { cookieUtils } from "@/lib/utils";
 import { Droplet, Eye, EyeOff } from "lucide-react";
 import type { User, Session } from '@supabase/supabase-js';
 
 const Auth = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const { user, loading: authLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [phone, setPhone] = useState("");
@@ -22,31 +23,13 @@ const Auth = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  // Redirect if already authenticated
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        // Redirect to main page on any authentication event if user exists
-        if (session?.user) {
-          navigate("/");
-        }
-      }
-    );
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      // Auto-redirect if already logged in
-      if (session?.user) {
-        navigate("/");
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
+    if (!authLoading && user) {
+      console.log('User already authenticated, redirecting to home');
+      navigate("/", { replace: true });
+    }
+  }, [user, authLoading, navigate]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,14 +58,15 @@ const Auth = () => {
       } else {
         // If user is immediately logged in (email confirmation disabled)
         if (data.session) {
-          await supabase.auth.setSession({
-            access_token: data.session.access_token,
-            refresh_token: data.session.refresh_token,
-          });
+          // Set session cookies for persistence
+          cookieUtils.setSessionData(data.session);
           
           toast({
-            description: "Account created and signed in successfully!",
+            description: "Account created and signed in successfully! Redirecting...",
           });
+          
+          // Let the useEffect handle navigation when user state updates
+          console.log('Sign-up successful, waiting for auth state update...');
         } else {
           toast({
             description: "Account created! Please check your email to verify your account.",
@@ -108,38 +92,64 @@ const Auth = () => {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!email || !password) {
+      toast({
+        description: "Please fill in all fields",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
+      console.log('Starting sign in process...');
+      
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim(),
         password,
       });
 
       if (error) {
+        console.error('Sign in error:', error);
+        
         if (error.message.includes("Invalid login credentials")) {
           toast({
-            description: "Invalid email or password. Please try again.",
+            description: "Invalid email or password. Please check your credentials and try again.",
+            variant: "destructive"
+          });
+        } else if (error.message.includes("Email not confirmed")) {
+          toast({
+            description: "Please confirm your email address before signing in.",
             variant: "destructive"
           });
         } else {
           toast({
-            description: error.message,
+            description: error.message || "Sign in failed. Please try again.",
             variant: "destructive"
           });
         }
-      } else if (data.session) {
-        // Ensure session cookies are properly set on successful login
-        await supabase.auth.setSession({
-          access_token: data.session.access_token,
-          refresh_token: data.session.refresh_token,
-        });
+      } else if (data.session && data.user) {
+        console.log('Sign in successful:', data.user.email);
+        
+        // Set session cookies for persistence
+        cookieUtils.setSessionData(data.session);
         
         toast({
-          description: "Successfully signed in!",
+          description: "Successfully signed in! Redirecting...",
+        });
+        
+        // Let the useEffect handle navigation when user state updates
+        console.log('Sign-in successful, waiting for auth state update...');
+      } else {
+        toast({
+          description: "Sign in failed. Please try again.",
+          variant: "destructive"
         });
       }
     } catch (error: any) {
+      console.error('Sign in exception:', error);
       toast({
         description: "An unexpected error occurred. Please try again.",
         variant: "destructive"
@@ -154,19 +164,31 @@ const Auth = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-aqua-light/10 via-background to-wave-blue/5 flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{
+      background: 'linear-gradient(135deg, rgba(14, 165, 233, 0.1) 0%, rgb(248, 250, 252) 50%, rgba(59, 130, 246, 0.05) 100%)'
+    }}>
       <div className="flex flex-col items-center w-full max-w-sm sm:max-w-md space-y-4 sm:space-y-6">
         {/* Logo */}
         <div className="flex items-center space-x-2 sm:space-x-3">
-          <div className="w-8 h-8 sm:w-12 sm:h-12 bg-gradient-to-br from-aqua-primary to-wave-blue rounded-full flex items-center justify-center shadow-lg">
+          <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shadow-lg" style={{
+            background: 'linear-gradient(135deg, #0ea5e9 0%, #3b82f6 100%)'
+          }}>
             <Droplet className="w-5 h-5 sm:w-8 sm:h-8 text-white" />
           </div>
-          <span className="text-xl sm:text-3xl font-bold bg-gradient-to-r from-ocean-deep to-aqua-primary bg-clip-text text-transparent">
+          <span className="text-xl sm:text-3xl font-bold" style={{
+            background: 'linear-gradient(90deg, #1e40af 0%, #0ea5e9 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text'
+          }}>
             Aqua Marina
           </span>
         </div>
 
-        <Card className="w-full border-aqua-light/30 shadow-water">
+        <Card className="w-full shadow-lg" style={{
+          borderColor: 'rgba(14, 165, 233, 0.3)',
+          boxShadow: '0 10px 40px -10px rgba(14, 165, 233, 0.3)'
+        }}>
           <CardHeader className="pb-4 sm:pb-6">
             <CardTitle className="text-lg sm:text-xl text-center text-ocean-deep">Welcome</CardTitle>
           </CardHeader>

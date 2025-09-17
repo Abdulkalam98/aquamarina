@@ -131,8 +131,21 @@ const AdminDashboard = () => {
   };
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    navigate('/');
+    try {
+      console.log('AdminDashboard: Starting signout...');
+      await supabase.auth.signOut();
+      
+      // Clear local storage
+      localStorage.removeItem('supabase.auth.token');
+      localStorage.removeItem('sb-' + import.meta.env.VITE_SUPABASE_PROJECT_ID + '-auth-token');
+      
+      // Force a complete page refresh to clear any remaining state
+      window.location.href = '/auth';
+    } catch (error) {
+      console.error('Error signing out from admin dashboard:', error);
+      // Force navigation even if signout fails
+      window.location.href = '/auth';
+    }
   };
 
   const getStatusColor = (status: string) => {
