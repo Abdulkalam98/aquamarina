@@ -1,5 +1,6 @@
 import { useState, useEffect, createContext, useContext } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { cookieUtils } from "@/lib/utils";
 import type { User, Session } from '@supabase/supabase-js';
 
 interface AuthContextType {
@@ -32,9 +33,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchUserRole = async (userId: string) => {
+  const fetchUserRole = async (userId: string, userEmail: string) => {
     try {
-      console.log('Fetching role for user ID:', userId);
+      console.log('Fetching role for user ID:', userId, 'Email:', userEmail);
+      
+      // Check if this is the admin email
+      const isAdminEmail = userEmail === 'abdulkalam081998@gmail.com';
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('role')
@@ -43,17 +48,66 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       if (error) {
         console.error('Error fetching user role:', error);
-        // Return default role instead of throwing
-        return 'user';
+        
+        // If profile doesn't exist, create it
+        if (error.code === 'PGRST116') { // No rows returned
+          console.log('Profile not found, creating new profile...');
+          
+          const newRole = isAdminEmail ? 'admin' : 'user';
+          
+          const { data: newProfile, error: createError } = await supabase
+            .from('profiles')
+            .insert([
+              {
+                user_id: userId,
+                email: userEmail,
+                role: newRole
+              }
+            ])
+            .select('role')
+            .single();
+          
+          if (createError) {
+            console.error('Error creating profile:', createError);
+            return isAdminEmail ? 'admin' : 'user'; // Fallback to email-based role
+          }
+          
+          console.log('Profile created with role:', newProfile.role);
+          return newProfile.role;
+        }
+        
+        // Return role based on email for other errors
+        return isAdminEmail ? 'admin' : 'user';
       }
       
-      const role = data?.role || 'user';
+      // If profile exists but role doesn't match email, update it
+      const expectedRole = isAdminEmail ? 'admin' : 'user';
+      if (data?.role !== expectedRole && isAdminEmail) {
+        console.log('Updating profile role to admin for admin email...');
+        
+        const { data: updatedProfile, error: updateError } = await supabase
+          .from('profiles')
+          .update({ role: 'admin' })
+          .eq('user_id', userId)
+          .select('role')
+          .single();
+        
+        if (updateError) {
+          console.error('Error updating profile role:', updateError);
+          return 'admin'; // Fallback for admin email
+        }
+        
+        console.log('Profile role updated to:', updatedProfile.role);
+        return updatedProfile.role;
+      }
+      
+      const role = data?.role || (isAdminEmail ? 'admin' : 'user');
       console.log('Fetched user role:', role);
       return role;
     } catch (error) {
       console.error('Exception in fetchUserRole:', error);
-      // Return default role on any error
-      return 'user';
+      // Return admin for admin email, user for others
+      return userEmail === 'abdulkalam081998@gmail.com' ? 'admin' : 'user';
     }
   };
 
@@ -102,8 +156,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setUser(session?.user ?? null);
           
           if (session?.user) {
-            console.log('User found, setting role to user by default');
-            setUserRole('user'); // Skip role fetch for now to prevent delays
+            console.log('User found, fetching role...');
+            // Fetch the actual user role from the database
+            fetchUserRole(session.user.id, session.user.email || '').then(role => {
+              setUserRole(role);
+              console.log('User role set to:', role);
+            });
           } else {
             setUserRole(null);
             console.log('No user found, role set to null');
@@ -137,14 +195,30 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           email: session?.user?.email
         });
         
-        if (mounted && !authResolved) {
+        if (mounted) {
           setSession(session);
           setUser(session?.user ?? null);
-          setUserRole(session?.user ? 'user' : null); // Simplified role assignment
-          setLoading(false);
-          authResolved = true;
-          clearTimeout(fallbackTimeout);
-          console.log('Auth state change processed');
+          
+          if (session?.user) {
+            console.log('Auth state changed - fetching user role...');
+            // Fetch the actual user role from the database
+            fetchUserRole(session.user.id, session.user.email || '').then(role => {
+              setUserRole(role);
+              console.log('User role set to:', role);
+            });
+          } else {
+            setUserRole(null);
+          }
+          
+          // Only set loading to false if this is not during initial setup
+          if (authResolved) {
+            console.log('Auth state change processed - user signed in/out');
+          } else {
+            setLoading(false);
+            authResolved = true;
+            clearTimeout(fallbackTimeout);
+            console.log('Auth state change processed - initial setup complete');
+          }
         }
       }
     );
@@ -164,18 +238,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       setLoading(true);
       
+      console.log('Starting comprehensive sign out process...');
+      
+      // Clear Supabase auth first
       const { error } = await supabase.auth.signOut();
       if (error) {
-        console.error('Sign out error:', error);
+        console.error('Supabase sign out error:', error);
       }
       
-      // Clear state
+      // Use comprehensive cleanup utility
+      cookieUtils.clearAllAuthData();
+      
+      // Clear state immediately
       setUser(null);
       setSession(null);
       setUserRole(null);
+      
+      console.log('Sign out completed successfully');
     } catch (error) {
       console.error('Sign out error:', error);
-      // Force clear state even on error
+      
+      // Force cleanup even on error
+      cookieUtils.clearAllAuthData();
       setUser(null);
       setSession(null);
       setUserRole(null);

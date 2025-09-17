@@ -27,11 +27,15 @@ const Index = () => {
   // Handle sign out with redirect
   const handleSignOut = async () => {
     try {
+      console.log('Index: Starting signout...');
       await signOut();
-      navigate('/auth', { replace: true });
+      
+      // Force a complete page refresh to clear any remaining state
+      window.location.href = '/auth';
     } catch (error) {
       console.error('Sign out error:', error);
-      navigate('/auth', { replace: true });
+      // Force navigation even if signout fails
+      window.location.href = '/auth';
     }
   };
 

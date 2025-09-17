@@ -201,10 +201,15 @@ const AdminPanel = () => {
 
   const handleSignOut = async () => {
     try {
+      console.log('AdminPanel: Starting signout...');
       await signOut();
-      navigate('/');
+      
+      // Force a complete page refresh to clear any remaining state
+      window.location.href = '/auth';
     } catch (error) {
-      console.error('Error signing out:', error);
+      console.error('Error signing out from admin panel:', error);
+      // Force navigation even if signout fails
+      window.location.href = '/auth';
     }
   };
 
