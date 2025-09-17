@@ -126,38 +126,64 @@ const OrderForm = () => {
       return;
     }
 
+    console.log('Order submission started');
+    console.log('User:', user);
+    console.log('Cart items:', cartItems);
+
     setLoading(true);
 
     try {
+      // Verify user is authenticated
+      if (!user || !user.id) {
+        throw new Error('User not authenticated');
+      }
+
+      // Double-check Supabase auth state
+      const { data: { user: supabaseUser }, error: authError } = await supabase.auth.getUser();
+      console.log('Supabase user:', supabaseUser);
+      
+      if (authError || !supabaseUser) {
+        console.error('Supabase auth error:', authError);
+        throw new Error('Supabase authentication failed');
+      }
+
       // Calculate total cost
       const totalCost = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
       
+      console.log('Inserting orders for user:', user.id);
+      
       // Create order for each cart item
       for (const item of cartItems) {
+        console.log('Inserting order for item:', item);
+        
+        const orderData = {
+          user_id: user.id, // Add user_id for RLS
+          full_name: formData.fullName,
+          phone: formData.phone,
+          email: formData.email,
+          address: formData.address,
+          service_type: formData.serviceType,
+          product: `${item.name} - ${item.size}`,
+          quantity: item.quantity,
+          total_cost: item.price * item.quantity,
+          delivery_date: formData.deliveryDate || null,
+          delivery_time: formData.deliveryTime || null,
+          special_instructions: formData.specialInstructions || null,
+          status: 'pending'
+        };
+
+        console.log('Order data to insert:', orderData);
+
         const { error: orderError } = await supabase
           .from('orders')
-          .insert([
-            {
-              user_id: user.id, // Add user_id for RLS
-              full_name: formData.fullName,
-              phone: formData.phone,
-              email: formData.email,
-              address: formData.address,
-              service_type: formData.serviceType,
-              product: `${item.name} - ${item.size}`,
-              quantity: item.quantity,
-              total_cost: item.price * item.quantity,
-              delivery_date: formData.deliveryDate || null,
-              delivery_time: formData.deliveryTime || null,
-              special_instructions: formData.specialInstructions || null,
-              status: 'pending'
-            }
-          ]);
+          .insert([orderData]);
 
         if (orderError) {
           console.error('Error creating order:', orderError);
           throw orderError;
         }
+        
+        console.log('Order inserted successfully for item:', item.name);
       }
 
       // Send admin notification
