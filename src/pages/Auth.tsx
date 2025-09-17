@@ -55,7 +55,7 @@ const Auth = () => {
     try {
       const redirectUrl = `${window.location.origin}/`;
       
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -68,27 +68,39 @@ const Auth = () => {
       });
 
       if (error) {
-        if (error.message.includes("already registered")) {
+        toast({
+          description: error.message,
+          variant: "destructive"
+        });
+      } else {
+        // If user is immediately logged in (email confirmation disabled)
+        if (data.session) {
+          await supabase.auth.setSession({
+            access_token: data.session.access_token,
+            refresh_token: data.session.refresh_token,
+          });
+          
           toast({
-            description: "This email is already registered. Please sign in instead.",
-            variant: "destructive"
+            description: "Account created and signed in successfully!",
           });
         } else {
           toast({
-            description: error.message,
-            variant: "destructive"
+            description: "Account created! Please check your email to verify your account.",
           });
         }
-      } else {
-        toast({
-          description: "Please check your email to confirm your account.",
-        });
       }
     } catch (error: any) {
-      toast({
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive"
-      });
+      if (error.message.includes("already registered")) {
+        toast({
+          description: "This email is already registered. Please sign in instead.",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          description: "An unexpected error occurred. Please try again.",
+          variant: "destructive"
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -99,7 +111,7 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -116,6 +128,16 @@ const Auth = () => {
             variant: "destructive"
           });
         }
+      } else if (data.session) {
+        // Ensure session cookies are properly set on successful login
+        await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+        });
+        
+        toast({
+          description: "Successfully signed in!",
+        });
       }
     } catch (error: any) {
       toast({
