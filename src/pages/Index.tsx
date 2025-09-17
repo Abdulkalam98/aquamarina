@@ -31,21 +31,45 @@ const Index = () => {
       navigate('/auth', { replace: true });
     } catch (error) {
       console.error('Sign out error:', error);
-      // Force redirect even if signOut fails
       navigate('/auth', { replace: true });
     }
   };
 
-  // Show loading spinner while auth is loading
+  // Log current auth state for debugging
+  console.log('Index page auth state:', { 
+    loading, 
+    hasUser: !!user, 
+    userEmail: user?.email,
+    userRole 
+  });
+
+  // Show loading with timeout - if loading takes too long, show button to continue
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-aqua-light/10 via-background to-wave-blue/5">
-        <div className="text-center">
+        <div className="text-center max-w-md mx-auto p-6">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-aqua-primary mx-auto mb-4"></div>
-          <p className="text-ocean-deep">Loading...</p>
+          <p className="text-ocean-deep mb-2">Loading...</p>
+          <p className="text-sm text-muted-foreground mb-4">
+            Checking authentication status...
+          </p>
+          <div className="space-y-2">
+            <Button 
+              onClick={() => navigate('/auth')} 
+              variant="outline" 
+              className="w-full"
+            >
+              Go to Login
+            </Button>
+          </div>
         </div>
       </div>
     );
+  }
+
+  // If no user after loading is complete, redirect to auth
+  if (!loading && !user) {
+    return null; // Will redirect via useEffect
   }
 
   // If user is not logged in, show nothing (redirect will happen)
