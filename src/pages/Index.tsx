@@ -16,6 +16,14 @@ const Index = () => {
   const { user, userRole, loading, signOut } = useAuth();
   const navigate = useNavigate();
 
+  // Simple redirect effect
+  useEffect(() => {
+    if (!loading && !user) {
+      console.log('No user found, redirecting to auth');
+      navigate('/auth', { replace: true });
+    }
+  }, [user, loading, navigate]);
+
   // Handle sign out with redirect
   const handleSignOut = async () => {
     try {
@@ -40,16 +48,9 @@ const Index = () => {
     );
   }
 
-  // If user is not logged in, redirect to auth
+  // If user is not logged in, show nothing (redirect will happen)
   if (!user) {
-    navigate('/auth', { replace: true });
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-aqua-light/10 via-background to-wave-blue/5">
-        <div className="text-center">
-          <p className="text-ocean-deep">Redirecting to login...</p>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (

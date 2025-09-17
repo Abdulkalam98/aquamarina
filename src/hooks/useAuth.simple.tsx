@@ -54,15 +54,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     console.log('Setting up auth...');
-    let mounted = true;
-    
-    // Force loading to false after 3 seconds as a fallback
-    const fallbackTimeout = setTimeout(() => {
-      if (mounted) {
-        console.log('Auth fallback: forcing loading to false');
-        setLoading(false);
-      }
-    }, 3000);
     
     // Get initial session
     const getInitialSession = async () => {
@@ -75,29 +66,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         console.log('Initial session:', !!session, session?.user?.email);
         
-        if (mounted) {
-          setSession(session);
-          setUser(session?.user ?? null);
-          
-          if (session?.user) {
-            const role = await fetchUserRole(session.user.id);
-            if (mounted) {
-              setUserRole(role);
-            }
-          } else {
-            setUserRole(null);
-          }
-          
-          setLoading(false);
-          clearTimeout(fallbackTimeout);
-          console.log('Auth setup complete - user:', !!session?.user);
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          const role = await fetchUserRole(session.user.id);
+          setUserRole(role);
+        } else {
+          setUserRole(null);
         }
+        
+        setLoading(false);
+        console.log('Auth setup complete - user:', !!session?.user);
       } catch (error) {
         console.error('Error in getInitialSession:', error);
-        if (mounted) {
-          setLoading(false);
-          clearTimeout(fallbackTimeout);
-        }
+        setLoading(false);
       }
     };
 
@@ -106,30 +89,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       async (event, session) => {
         console.log('Auth state changed:', event, !!session?.user);
         
-        if (mounted) {
-          setSession(session);
-          setUser(session?.user ?? null);
-          
-          if (session?.user) {
-            const role = await fetchUserRole(session.user.id);
-            if (mounted) {
-              setUserRole(role);
-            }
-          } else {
-            setUserRole(null);
-          }
-          
-          setLoading(false);
-          clearTimeout(fallbackTimeout);
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          const role = await fetchUserRole(session.user.id);
+          setUserRole(role);
+        } else {
+          setUserRole(null);
         }
+        
+        setLoading(false);
       }
     );
 
     getInitialSession();
 
     return () => {
-      mounted = false;
-      clearTimeout(fallbackTimeout);
       subscription.unsubscribe();
     };
   }, []);
